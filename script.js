@@ -3059,10 +3059,12 @@ function initPracticeTabs() {
 function loadPractice() {
   const area = document.getElementById("practiceArea");
   if (!area) return;
+  startStudySession();
   area.innerHTML = "";
   if (practiceMode === "hangul-quiz") renderHangulQuiz(area);
   else if (practiceMode === "vocab-quiz") renderVocabQuiz(area);
   else if (practiceMode === "word-order") renderWordOrder(area);
+  else if (practiceMode === "typing") renderTypingPractice(area);
   else if (
     practiceMode === "listening" &&
     typeof renderListeningQuiz === "function"
@@ -3099,6 +3101,213 @@ function loadPractice() {
     typeof renderDebatePractice === "function"
   )
     renderDebatePractice(area);
+  else if (practiceMode === "boss") renderBossChallenge(area);
+}
+
+function renderTypingPractice(area) {
+  const item =
+    Object.values(VOCAB).flat()[
+      practiceIdx % Object.values(VOCAB).flat().length
+    ];
+  const mode = practiceIdx % 3;
+  const expected =
+    mode === 0 ? item.kr : mode === 1 ? item.kr : item.ex_kr || item.kr;
+  const prompt =
+    mode === 0
+      ? "Copy the Korean word accurately."
+      : mode === 1
+        ? "English: " + item.en + " — type the Korean word."
+        : "Translate: " +
+          (item.ex_en || item.en) +
+          " — type the Korean sentence.";
+  const card = document.createElement("div");
+  card.className = "quiz-card typing-card";
+  card.innerHTML =
+    '<div class="quiz-question-label">' +
+    prompt +
+    "</div>" +
+    (mode === 0 ? '<div class="typing-target">' + item.kr + "</div>" : "") +
+    '<textarea id="typingInput" class="free-writing-input" rows="2" placeholder="한국어로 입력하세요…" aria-label="Korean typing answer"></textarea><div class="builder-actions"><button class="btn-check" id="typingCheck">Check</button><button class="btn-next" id="typingNext" style="display:none">Next</button></div><div class="builder-feedback" id="typingFeedback" aria-live="polite"></div>';
+  area.appendChild(card);
+  const input = card.querySelector("#typingInput");
+  card.querySelector("#typingCheck").addEventListener("click", () => {
+    const answer = normalizeKorean(input.value);
+    const expectedNormalized = normalizeKorean(expected);
+    const correct = answer === expectedNormalized;
+    const feedback = card.querySelector("#typingFeedback");
+    feedback.innerHTML = correct
+      ? '<span class="quiz-feedback correct">Correct production. Your Korean matches.</span>'
+      : '<span class="quiz-feedback incorrect">Almost.</span><div>Your answer: ' +
+        (input.value || "(empty)") +
+        "<br>Expected: " +
+        expected +
+        (mode === 2
+          ? "<br>Use the sentence pattern from the example, including its particles."
+          : "") +
+        "</div>";
+    recordQuality("typing:" + item.kr + ":" + mode, correct, {
+      concept: "Korean typing",
+    });
+    if (correct)
+      addLearningActivity(8, {
+        key: "typing:" + item.kr + ":" + mode,
+        type: "typing",
+        prompt,
+        answer: expected,
+        correct: true,
+      });
+    else recordQuizMistake("typing", expected, "Typing practice — " + item.en);
+    card.querySelector("#typingCheck").disabled = true;
+    card.querySelector("#typingNext").style.display = "inline-block";
+  });
+  card.querySelector("#typingNext").addEventListener("click", () => {
+    practiceIdx++;
+    loadPractice();
+  });
+  input.focus();
+}
+
+function renderBossChallenge(area) {
+  let bossLevel = 0;
+  for (let candidate = 0; candidate < COURSE_LEVELS.length - 1; candidate++) {
+    const levelLessons = COURSE_LESSONS.filter(
+      (lesson) => lesson.level === candidate,
+    );
+    const levelComplete = levelLessons.every(
+      (lesson) => courseLessonStatus(lesson).done,
+    );
+    if (
+      !levelComplete ||
+      !(
+        appState.progress.bosses[candidate] &&
+        appState.progress.bosses[candidate].passed
+      )
+    ) {
+      bossLevel = candidate;
+      break;
+    }
+    bossLevel = candidate + 1;
+  }
+  const questions = shuffleArray(HANGUL_QUIZ.slice()).slice(0, 30);
+  let index = 0;
+  let score = 0;
+  let answered = false;
+  function draw() {
+    if (index >= questions.length) {
+      const accuracy = Math.round((score / questions.length) * 100);
+      const rank =
+        accuracy >= 95
+          ? "S"
+          : accuracy >= 85
+            ? "A"
+            : accuracy >= 70
+              ? "B"
+              : "Practice Required";
+      const passed = accuracy >= 70;
+      appState.progress.bosses[bossLevel] = {
+        score,
+        accuracy,
+        rank,
+        passed,
+        completedAt: Date.now(),
+      };
+      const reward = passed ? (rank === "S" ? 60 : 40) : 10;
+      addLearningActivity(reward, {
+        key: "boss:hangul",
+        type: "hangul-boss",
+        prompt: "Hangul Boss",
+        answer: rank,
+        correct: passed,
+      });
+      saveState();
+      area.innerHTML =
+        '<div class="boss-result"><span class="course-eyebrow">LEVEL ' +
+        bossLevel +
+        " BOSS COMPLETE</span><h2>" +
+        rank +
+        " Rank</h2><p>" +
+        score +
+        "/30 correct · " +
+        accuracy +
+        "% accuracy</p><strong>+" +
+        reward +
+        " XP</strong><p>" +
+        (passed
+          ? "Next level unlocked. Your weak concepts are scheduled for review."
+          : "The fundamentals are taking shape. Review your weak areas and try the Boss again.") +
+        '</p><button class="primary-btn" id="bossRetry">Try again</button></div>';
+      area
+        .querySelector("#bossRetry")
+        .addEventListener("click", () => renderBossChallenge(area));
+      if (typeof renderCourseDashboard === "function") renderCourseDashboard();
+      return;
+    }
+    answered = false;
+    const item = questions[index];
+    const options = shuffleArray(item.options.slice());
+    area.innerHTML =
+      '<div class="boss-header"><span class="course-eyebrow">HANGUL BOSS</span><strong>Question ' +
+      (index + 1) +
+      "/30</strong><span>Score " +
+      score +
+      '</span></div><div class="boss-question"><p>Identify the sound before choosing.</p><div class="quiz-char">' +
+      item.char +
+      '</div><div class="quiz-options">' +
+      options
+        .map(
+          (option) =>
+            '<button class="quiz-option" data-answer="' +
+            option +
+            '">' +
+            option +
+            "</button>",
+        )
+        .join("") +
+      '</div><div class="quiz-feedback" id="bossFeedback"></div><button class="quiz-next" id="bossNext">Next</button></div>';
+    area.querySelectorAll(".quiz-option").forEach((button) =>
+      button.addEventListener("click", () => {
+        if (answered) return;
+        answered = true;
+        const correct = button.dataset.answer === item.correct;
+        if (correct) score++;
+        area.querySelectorAll(".quiz-option").forEach((candidate) => {
+          candidate.classList.add("disabled");
+          if (candidate.dataset.answer === item.correct)
+            candidate.classList.add("correct");
+        });
+        button.classList.add(correct ? "correct" : "incorrect");
+        area.querySelector("#bossFeedback").textContent = correct
+          ? "Correct — keep your focus."
+          : "Review: " + item.char + " = " + item.correct + ".";
+        area.querySelector("#bossFeedback").className =
+          "quiz-feedback " + (correct ? "correct" : "incorrect");
+        recordQuality("boss:hangul:" + item.char, correct, {
+          concept: "Hangul",
+        });
+        if (!correct)
+          recordQuizMistake(
+            "hangul",
+            item.char,
+            "Hangul Boss: " + item.correct,
+          );
+      }),
+    );
+    area.querySelector("#bossNext").addEventListener("click", () => {
+      if (!answered) return;
+      index++;
+      draw();
+    });
+  }
+  startStudySession();
+  area.innerHTML =
+    '<div class="boss-intro"><span class="course-eyebrow">LEVEL ' +
+    bossLevel +
+    " FINAL TEST</span><h2>" +
+    (bossLevel === 0
+      ? "Hangul Boss Challenge"
+      : COURSE_LEVELS[bossLevel].title + " Boss Challenge") +
+    '</h2><p>30 mixed questions. Passing at 70% unlocks the next major level.</p><button class="primary-btn" id="bossStart">Start challenge</button></div>';
+  area.querySelector("#bossStart").addEventListener("click", draw);
 }
 
 /* ============================================================
@@ -4923,11 +5132,22 @@ function renderConversationPractice(area) {
       fb.textContent = choice.feedback;
       fb.className =
         "quiz-feedback " + (choice.correct ? "correct" : "incorrect");
+      recordQuality("conversation:" + scenario.title, choice.correct, {
+        concept: "Conversation",
+      });
+      if (choice.correct)
+        addLearningActivity(8, {
+          key: "conversation:" + scenario.title,
+          type: "conversation",
+          prompt: scenario.prompt,
+          answer: choice.kr,
+          correct: true,
+        });
       if (!choice.correct)
         recordQuizMistake(
           "conversation",
           scenario.title,
-          "Conversation Scenario",
+          "Conversation Scenario — choose the response that fits the situation.",
         );
       if (typeof trackExposure === "function")
         trackExposure("sentences", "conversation-" + scenario.title);
@@ -5123,7 +5343,10 @@ function renderDictationQuiz(area) {
   const checkBtn = card.querySelector("#dictationCheck");
   const nextBtn = card.querySelector("#dictationNext");
   const fb = card.querySelector("#dictationFeedback");
+  let checked = false;
   checkBtn.addEventListener("click", function () {
+    if (checked) return;
+    checked = true;
     const userVal = card.querySelector("#dictationInput").value;
     const exact = userVal.trim() === item.kr;
     const closeEnough = diffSpacing(userVal, item.kr);
@@ -5148,6 +5371,16 @@ function renderDictationQuiz(area) {
         "</div>";
       recordQuizMistake("dictation", item.kr, "Dictation");
     }
+    const correct = exact || closeEnough;
+    recordQuality("dictation:" + item.kr, correct, { concept: "Listening" });
+    if (correct)
+      addLearningActivity(8, {
+        key: "dictation:" + item.kr,
+        type: "dictation",
+        prompt: item.kr,
+        answer: item.kr,
+        correct: true,
+      });
     if (typeof trackExposure === "function")
       trackExposure("sentences", item.kr);
     nextBtn.style.display = "inline-block";
@@ -5197,15 +5430,38 @@ function renderHangulQuiz(area) {
       if (this.dataset.opt === item.correct) {
         this.classList.add("correct");
         if (fb) {
-          fb.textContent = "Correct.";
+          fb.textContent =
+            "Correct — " +
+            item.char +
+            " is pronounced " +
+            item.correct +
+            ". Say it once before continuing.";
           fb.className = "quiz-feedback correct";
         }
+        recordQuality("practice:hangul:" + item.char, true, {
+          concept: "Hangul",
+        });
+        addLearningActivity(5, {
+          key: "practice:hangul:" + item.char,
+          type: "hangul",
+          prompt: item.char,
+          answer: item.correct,
+          correct: true,
+        });
       } else {
         this.classList.add("incorrect");
         if (fb) {
-          fb.textContent = "Incorrect. The answer is: " + item.correct;
+          fb.textContent =
+            "Almost. " +
+            item.char +
+            " is " +
+            item.correct +
+            ". Compare the shape with the nearby letters before trying again.";
           fb.className = "quiz-feedback incorrect";
         }
+        recordQuality("practice:hangul:" + item.char, false, {
+          concept: "Hangul",
+        });
         if (typeof recordQuizMistake === "function")
           recordQuizMistake("hangul", item.char, "Hangul Quiz");
       }
@@ -5263,15 +5519,38 @@ function renderVocabQuiz(area) {
       if (this.dataset.opt === item.correct) {
         this.classList.add("correct");
         if (fb) {
-          fb.textContent = "Correct.";
+          fb.textContent =
+            "Correct — " +
+            item.kr +
+            " means “" +
+            item.correct +
+            ".” Try using it in a sentence.";
           fb.className = "quiz-feedback correct";
         }
+        recordQuality("practice:vocab:" + item.kr, true, {
+          concept: "Vocabulary",
+        });
+        addLearningActivity(5, {
+          key: "practice:vocab:" + item.kr,
+          type: "vocab",
+          prompt: item.kr,
+          answer: item.correct,
+          correct: true,
+        });
       } else {
         this.classList.add("incorrect");
         if (fb) {
-          fb.textContent = "Incorrect. The answer is: " + item.correct;
+          fb.textContent =
+            "Almost. “" +
+            item.kr +
+            "” means “" +
+            item.correct +
+            ".” Read the word aloud once more.";
           fb.className = "quiz-feedback incorrect";
         }
+        recordQuality("practice:vocab:" + item.kr, false, {
+          concept: "Vocabulary",
+        });
         if (typeof recordQuizMistake === "function")
           recordQuizMistake("vocab", item.kr, "Vocabulary Quiz");
       }
@@ -5578,6 +5857,10 @@ function defaultProgressState() {
     daily: { date: todayKey(), activities: 0 },
     lessonMastery: {},
     reviewQueue: [],
+    quality: {},
+    session: { startedAt: null, questions: 0, correct: 0, xp: 0, concepts: [] },
+    bosses: {},
+    achievements: {},
   };
 }
 
@@ -5639,6 +5922,23 @@ function mergeStateDefaults(state) {
   merged.progress.reviewQueue = Array.isArray(merged.progress.reviewQueue)
     ? merged.progress.reviewQueue
     : [];
+  merged.progress.quality =
+    merged.progress.quality && typeof merged.progress.quality === "object"
+      ? merged.progress.quality
+      : {};
+  merged.progress.session = Object.assign(
+    { startedAt: null, questions: 0, correct: 0, xp: 0, concepts: [] },
+    merged.progress.session,
+  );
+  merged.progress.bosses =
+    merged.progress.bosses && typeof merged.progress.bosses === "object"
+      ? merged.progress.bosses
+      : {};
+  merged.progress.achievements =
+    merged.progress.achievements &&
+    typeof merged.progress.achievements === "object"
+      ? merged.progress.achievements
+      : {};
   merged.exposure = Object.assign(
     {},
     defaults.exposure,
@@ -5688,6 +5988,7 @@ function addLearningActivity(xp, reviewItem) {
   }
   daily.activities++;
   appState.progress.xp += xp || 0;
+  appState.progress.session.xp += xp || 0;
   if (reviewItem) {
     const existing = appState.progress.reviewQueue.find(
       (item) => item.key === reviewItem.key,
@@ -5713,6 +6014,77 @@ function addLearningActivity(xp, reviewItem) {
   saveState();
 }
 
+function masteryLabelForQuality(record) {
+  if (!record || !record.attempts) return "New";
+  const accuracy = record.correct / record.attempts;
+  if (accuracy >= 0.95 && record.reveals === 0 && record.attempts >= 3)
+    return "Mastered";
+  if (accuracy >= 0.85 && record.hints <= record.correct) return "Strong";
+  if (accuracy >= 0.65) return "Familiar";
+  return "Learning";
+}
+
+function recordQuality(key, correct, options) {
+  const quality = appState.progress.quality[key] || {
+    attempts: 0,
+    correct: 0,
+    hints: 0,
+    reveals: 0,
+    last: 0,
+  };
+  quality.attempts++;
+  if (correct) quality.correct++;
+  if (options && options.hint) quality.hints++;
+  if (options && options.revealed) quality.reveals++;
+  quality.last = Date.now();
+  quality.mastery = masteryLabelForQuality(quality);
+  appState.progress.quality[key] = quality;
+  appState.progress.session.questions++;
+  if (correct) appState.progress.session.correct++;
+  if (
+    options &&
+    options.concept &&
+    appState.progress.session.concepts.indexOf(options.concept) === -1
+  )
+    appState.progress.session.concepts.push(options.concept);
+  return quality;
+}
+
+function startStudySession() {
+  if (!appState.progress.session.startedAt) {
+    appState.progress.session = {
+      startedAt: Date.now(),
+      questions: 0,
+      correct: 0,
+      xp: 0,
+      concepts: [],
+    };
+    saveState();
+  }
+}
+
+function finishStudySession() {
+  const session = appState.progress.session;
+  if (!session.startedAt || !session.questions) return null;
+  const result = {
+    minutes: Math.max(1, Math.round((Date.now() - session.startedAt) / 60000)),
+    questions: session.questions,
+    accuracy: Math.round((session.correct / session.questions) * 100),
+    xp: session.xp,
+    concepts: session.concepts.slice(),
+  };
+  appState.progress.lastSession = result;
+  appState.progress.session = {
+    startedAt: null,
+    questions: 0,
+    correct: 0,
+    xp: 0,
+    concepts: [],
+  };
+  saveState();
+  return result;
+}
+
 function courseLessonStatus(lesson) {
   const completedGuided = appState.progress.completedLessons.length;
   const courseIndex = COURSE_LESSONS.indexOf(lesson);
@@ -5722,12 +6094,99 @@ function courseLessonStatus(lesson) {
   )
     appState.progress.lessonMastery[lesson.id] = 1;
   const prior = COURSE_LESSONS.findIndex((item) => item.id === lesson.id) - 1;
+  const firstInLevel =
+    lesson.level > 0 &&
+    COURSE_LESSONS[prior] &&
+    COURSE_LESSONS[prior].level !== lesson.level;
+  const bossReady =
+    !firstInLevel ||
+    (appState.progress.bosses[lesson.level - 1] &&
+      appState.progress.bosses[lesson.level - 1].passed);
   const unlocked =
     lesson.level === 0 ||
     (prior >= 0 &&
-      appState.progress.lessonMastery[COURSE_LESSONS[prior].id] >= 1);
+      appState.progress.lessonMastery[COURSE_LESSONS[prior].id] >= 1 &&
+      bossReady);
   const mastery = appState.progress.lessonMastery[lesson.id] || 0;
   return { unlocked, done: mastery >= 1, mastery };
+}
+
+function getWeakArea() {
+  const repeated = appState.mistakes
+    .slice()
+    .sort((a, b) => (b.missed || 1) - (a.missed || 1))[0];
+  if (repeated)
+    return { label: repeated.note || repeated.type, type: repeated.type };
+  const weakest = Object.entries(appState.progress.quality).sort(
+    (a, b) =>
+      a[1].correct / Math.max(1, a[1].attempts) -
+      b[1].correct / Math.max(1, b[1].attempts),
+  )[0];
+  return weakest
+    ? { label: weakest[0], type: "review" }
+    : { label: "Build your first review set", type: "review" };
+}
+
+const ACHIEVEMENT_RULES = [
+  [
+    "hangul-explorer",
+    "Hangul Explorer",
+    "Learned all basic consonants",
+    () =>
+      appState.exposure.hangul.filter((item) =>
+        CONSONANTS.some((c) => c.char === item),
+      ).length >= CONSONANTS.length,
+  ],
+  [
+    "vowel-master",
+    "Vowel Master",
+    "Practiced every basic vowel",
+    () =>
+      appState.exposure.hangul.filter((item) =>
+        VOWELS.some((v) => v.char === item),
+      ).length >= VOWELS.length,
+  ],
+  [
+    "recall-expert",
+    "Recall Expert",
+    "Answered ten recall questions correctly",
+    () =>
+      Object.entries(appState.progress.quality).filter(
+        ([key, value]) => key.indexOf("review:") === 0 && value.correct > 0,
+      ).length >= 10,
+  ],
+  [
+    "boss-clear",
+    "Boss Clear",
+    "Passed a major Boss Challenge",
+    () => Object.values(appState.progress.bosses).some((boss) => boss.passed),
+  ],
+  [
+    "grammar-builder",
+    "Grammar Builder",
+    "Built strong recall across five concepts",
+    () =>
+      Object.entries(appState.progress.quality).filter(
+        ([key, value]) =>
+          key.indexOf("lesson:") === 0 &&
+          ["Strong", "Mastered"].indexOf(value.mastery) !== -1,
+      ).length >= 5,
+  ],
+];
+function syncAchievements() {
+  let changed = false;
+  ACHIEVEMENT_RULES.forEach(([id, title, description, test]) => {
+    if (!appState.progress.achievements[id] && test()) {
+      appState.progress.achievements[id] = {
+        title,
+        description,
+        unlockedAt: Date.now(),
+      };
+      changed = true;
+    }
+  });
+  if (changed) saveState();
+  return appState.progress.achievements;
 }
 
 function renderCourseDashboard() {
@@ -5744,6 +6203,8 @@ function renderCourseDashboard() {
       .length + appState.mistakes.length;
   const daily = appState.progress.daily;
   const level = COURSE_LEVELS[current.level];
+  const weakArea = getWeakArea();
+  const comeback = appState.progress.comeback;
   const levelHtml = COURSE_LEVELS.map((item) => {
     const lessons = COURSE_LESSONS.filter((lesson) => lesson.level === item.id);
     const finished = lessons.filter(
@@ -5796,7 +6257,15 @@ function renderCourseDashboard() {
     );
   }).join("");
   root.innerHTML =
-    '<div class="course-summary"><div><span class="course-eyebrow">YOUR KOREAN COURSE</span><h2>Keep the chain moving</h2><p>Level ' +
+    '<div class="course-summary"><div><span class="course-eyebrow">YOUR KOREAN COURSE</span><h2>' +
+    (comeback
+      ? "Welcome back — your progress is safe"
+      : "Keep the chain moving") +
+    "</h2><p>" +
+    (comeback
+      ? "Your streak paused. Start with a five-minute comeback review. "
+      : "") +
+    "Level " +
     current.level +
     " &middot; " +
     level.title +
@@ -5820,15 +6289,41 @@ function renderCourseDashboard() {
     COURSE_LESSONS.length +
     " lessons</span></div>" +
     levelHtml +
-    '</div><div class="course-recommendations"><button data-course-goto="review"><strong>Quick review</strong><span>' +
+    '</div><div class="course-daily-plan"><h2 class="subsection-title">Today\'s Korean plan</h2><div><span>1</span><strong>Continue lesson</strong><small>' +
+    current.title +
+    "</small></div><div><span>2</span><strong>Review</strong><small>" +
+    due +
+    " items due</small></div><div><span>3</span><strong>Weak area</strong><small>" +
+    weakArea.label +
+    "</small></div><div><span>4</span><strong>Daily challenge</strong><small>" +
+    Math.min(daily.activities, appState.progress.dailyGoal) +
+    "/" +
+    appState.progress.dailyGoal +
+    ' activities</small></div></div><div class="course-recommendations"><button data-course-goto="review"><strong>Quick review</strong><span>' +
     due +
     ' items waiting</span></button><button data-course-goto="practice"><strong>Daily challenge</strong><span>Earn bonus XP today</span></button><button data-course-goto="' +
     level.section +
     '"><strong>Weak areas</strong><span>' +
-    (appState.mistakes[0]
-      ? appState.mistakes[0].note
-      : "Build your first review set") +
+    weakArea.label +
     "</span></button></div>";
+  const achievements = syncAchievements();
+  const achievementCards = ACHIEVEMENT_RULES.map(([id, title, description]) =>
+    achievements[id]
+      ? '<div class="achievement-card is-unlocked"><strong>' +
+        title +
+        "</strong><span>" +
+        description +
+        "</span></div>"
+      : '<div class="achievement-card"><strong>Locked milestone</strong><span>' +
+        description +
+        "</span></div>",
+  ).join("");
+  root.insertAdjacentHTML(
+    "beforeend",
+    '<div class="course-achievements"><h2 class="subsection-title">Milestones</h2><div class="achievement-grid">' +
+      achievementCards +
+      "</div></div>",
+  );
   const continueBtn = document.getElementById("courseContinueBtn");
   if (continueBtn)
     continueBtn.onclick = () => {
@@ -5849,7 +6344,7 @@ function renderCourseDashboard() {
     });
 }
 
-function recordLessonStep(lessonId, step, correct) {
+function recordLessonStep(lessonId, step, correct, options) {
   const sessions = appState.progress.lessonSessions;
   const current = sessions[lessonId] || {
     completedSteps: [],
@@ -5861,13 +6356,40 @@ function recordLessonStep(lessonId, step, correct) {
   current.attempts++;
   if (correct) current.correct++;
   sessions[lessonId] = current;
-  addLearningActivity(correct ? 10 : 2, {
+  const quality = recordQuality("lesson:" + lessonId + ":" + step, correct, {
+    hint: options && options.hint,
+    revealed: options && options.revealed,
+    concept: options && options.concept,
+  });
+  const reward =
+    options && options.revealed
+      ? 2
+      : options && options.hint
+        ? 6
+        : correct
+          ? 10
+          : 1;
+  addLearningActivity(reward, {
     key: "lesson:" + lessonId + ":" + step,
     type: "lesson",
     prompt: lessonId + " checkpoint",
     answer: correct ? "Correct" : "Review this checkpoint",
     correct,
   });
+  const courseLesson = COURSE_LESSONS.find(
+    (item) => item.lessonId === lessonId,
+  );
+  if (courseLesson)
+    appState.progress.lessonMastery[courseLesson.id] = Math.max(
+      appState.progress.lessonMastery[courseLesson.id] || 0,
+      quality.mastery === "Mastered"
+        ? 1
+        : quality.mastery === "Strong"
+          ? 0.85
+          : quality.mastery === "Familiar"
+            ? 0.7
+            : 0.25,
+    );
   saveState();
   renderCourseDashboard();
 }
@@ -5876,7 +6398,7 @@ function trackExposure(category, id) {
   if (!appState.exposure[category]) appState.exposure[category] = [];
   if (appState.exposure[category].indexOf(id) === -1) {
     appState.exposure[category].push(id);
-    addLearningActivity(3, {
+    addLearningActivity(0, {
       key: "exposure:" + category + ":" + id,
       type: category,
       prompt: id,
@@ -5957,6 +6479,7 @@ function updateStreak() {
   } else if (s.lastDate) {
     const prev = new Date(s.lastDate);
     const diffDays = Math.round((new Date(today) - prev) / 86400000);
+    appState.progress.comeback = diffDays > 1;
     s.count = diffDays === 1 ? s.count + 1 : 1;
     s.lastDate = today;
   } else {
@@ -5964,6 +6487,7 @@ function updateStreak() {
     s.lastDate = today;
   }
   saveState();
+  if (typeof renderCourseDashboard === "function") renderCourseDashboard();
   const el = document.getElementById("sidebarStreak");
   if (el)
     el.textContent = "Streak — " + s.count + (s.count === 1 ? " day" : " days");
@@ -10045,6 +10569,7 @@ function renderLessonList() {
 function openLesson(id) {
   const lesson = LESSONS.find((l) => l.id === id);
   if (!lesson) return;
+  startStudySession();
   const detail = getLessonDetails(lesson);
   currentLessonId = id;
 
@@ -10182,7 +10707,7 @@ function openLesson(id) {
     "</div>" +
     mistakesHTML +
     "</div>" +
-    '<div class="lesson-block"><div class="lesson-block-label">Practice · Check your understanding</div><div class="lesson-practice-prompt">' +
+    '<div class="lesson-block"><div class="lesson-block-label">Practice · Think before revealing</div><div class="lesson-practice-prompt">' +
     lesson.practicePrompt +
     '</div><div class="quiz-options" id="lessonPracticeOptions"></div><div class="quiz-feedback" id="lessonPracticeFeedback"></div></div>' +
     '<div class="lesson-block"><div class="lesson-block-label">Challenge · Choose with context</div><div class="lesson-practice-prompt">' +
@@ -10191,7 +10716,7 @@ function openLesson(id) {
     '<div class="lesson-block"><div class="lesson-block-label">Real Situation · Make it yours</div><div class="lesson-explanation">Read the situation, say the Korean example aloud, and substitute one word to make it true for you. Then return later for review instead of relying on completion alone.</div><div class="lesson-situation"><span class="lesson-situation-label">Situation</span><p>' +
     detail.context +
     "</p></div></div>" +
-    '<div class="lesson-nav-actions">' +
+    '<div class="lesson-result-message" aria-live="polite"></div><div class="lesson-nav-actions">' +
     '<button class="lesson-complete-btn" id="lessonCompleteBtn"' +
     (isCompleted ? " disabled" : "") +
     ">" +
@@ -10212,7 +10737,51 @@ function openLesson(id) {
     why,
   ) {
     let answered = false;
+    let hintUsed = false;
+    let revealed = false;
     if (!wrapper) return;
+    const controls = document.createElement("div");
+    controls.className = "checkpoint-controls";
+    controls.innerHTML =
+      '<button type="button" class="checkpoint-hint">Show hint</button><button type="button" class="checkpoint-reveal">Reveal answer</button>';
+    wrapper.parentElement.insertBefore(controls, wrapper);
+    controls.querySelector(".checkpoint-hint").addEventListener("click", () => {
+      hintUsed = true;
+      const fb = document.getElementById(feedbackId);
+      if (fb) {
+        fb.textContent =
+          "Hint: " + (why || "Look at the rule and compare the example.");
+        fb.className = "quiz-feedback hint";
+      }
+    });
+    controls
+      .querySelector(".checkpoint-reveal")
+      .addEventListener("click", () => {
+        if (answered) return;
+        answered = true;
+        revealed = true;
+        wrapper.querySelectorAll(".quiz-option").forEach((b) => {
+          b.classList.add("disabled");
+          if (b.textContent === answer) b.classList.add("correct");
+        });
+        const fb = document.getElementById(feedbackId);
+        if (fb) {
+          fb.textContent =
+            "Answer revealed: " +
+            answer +
+            ". Read the explanation, then try the checkpoint again later.";
+          fb.className = "quiz-feedback hint";
+        }
+        recordLessonStep(lesson.id, step, false, {
+          revealed: true,
+          concept: lesson.title,
+        });
+        recordQuizMistake(
+          "lesson",
+          note,
+          "Revealed in Lesson " + lesson.id + " — " + lesson.title,
+        );
+      });
     shuffleArray(options.slice()).forEach((opt) => {
       const btn = document.createElement("button");
       btn.className = "quiz-option";
@@ -10235,12 +10804,20 @@ function openLesson(id) {
               (why ? " Why: " + why : "");
           fb.className = "quiz-feedback " + (correct ? "correct" : "incorrect");
         }
-        recordLessonStep(lesson.id, step, correct);
+        recordLessonStep(lesson.id, step, correct, {
+          hint: hintUsed,
+          concept: lesson.title,
+        });
         if (!correct)
           recordQuizMistake(
             "lesson",
             note,
-            "Lesson " + lesson.id + " — " + lesson.title,
+            "Lesson " +
+              lesson.id +
+              " — " +
+              lesson.title +
+              ". " +
+              (why || "Review the rule and try a new example."),
           );
       });
       wrapper.appendChild(btn);
@@ -10268,14 +10845,67 @@ function openLesson(id) {
   const completeBtn = document.getElementById("lessonCompleteBtn");
   if (completeBtn) {
     completeBtn.addEventListener("click", function () {
+      const lessonSession = appState.progress.lessonSessions[lesson.id] || {
+        attempts: 0,
+        correct: 0,
+      };
+      const accuracy = lessonSession.attempts
+        ? lessonSession.correct / lessonSession.attempts
+        : 0;
+      const resultMessage = inner.querySelector(".lesson-result-message");
+      if (lessonSession.attempts < 2 || accuracy < 0.7) {
+        if (resultMessage)
+          resultMessage.textContent =
+            lessonSession.attempts < 2
+              ? "Complete both practice and challenge checkpoints before finishing this lesson."
+              : "You understand the basics, but this lesson needs another attempt. Review the highlighted rule and try again.";
+        if (resultMessage)
+          resultMessage.className = "lesson-result-message needs-review";
+        return;
+      }
+      let sessionResult = null;
       if (appState.progress.completedLessons.indexOf(lesson.id) === -1) {
         appState.progress.completedLessons.push(lesson.id);
         appState.progress.lessonResults[lesson.id] = {
           completedAt: Date.now(),
-          score:
-            (appState.progress.lessonSessions[lesson.id] || {}).correct || 0,
+          score: Math.round(accuracy * 100),
+          mastery: masteryLabelForQuality(
+            appState.progress.quality["lesson:" + lesson.id + ":2"],
+          ),
         };
+        const bonus = accuracy === 1 ? 40 : 25;
+        addLearningActivity(bonus, {
+          key: "completion:lesson:" + lesson.id,
+          type: "lesson",
+          prompt: lesson.title,
+          answer: "Lesson completed",
+          correct: true,
+        });
+        sessionResult = finishStudySession();
         saveState();
+        if (sessionResult && resultMessage)
+          resultMessage.textContent =
+            "Session complete — " +
+            sessionResult.minutes +
+            " min · " +
+            sessionResult.questions +
+            " questions · " +
+            sessionResult.accuracy +
+            "% accuracy · +" +
+            sessionResult.xp +
+            " XP. Next: review " +
+            (getWeakArea().label || "your weak area") +
+            ".";
+      }
+      if (resultMessage) {
+        if (!sessionResult)
+          resultMessage.textContent =
+            "Lesson complete — " +
+            Math.round(accuracy * 100) +
+            "% accuracy. +" +
+            (accuracy === 1 ? 40 : 25) +
+            " XP. Next: review your weakest concept before continuing.";
+        resultMessage.className = "lesson-result-message complete";
       }
       completeBtn.textContent = "Lesson Completed";
       completeBtn.disabled = true;
@@ -10559,6 +11189,46 @@ function renderReview() {
   const dueCount = appState.progress.reviewQueue.filter(
     (item) => item.due <= Date.now(),
   ).length;
+  const reviewGroups = {
+    hangul: 0,
+    vocab: 0,
+    grammar: 0,
+    reading: 0,
+    listening: 0,
+    sentence: 0,
+  };
+  appState.progress.reviewQueue
+    .filter((item) => item.due <= Date.now())
+    .forEach((item) => {
+      const key =
+        item.type === "vocab"
+          ? "vocab"
+          : item.type === "hangul"
+            ? "hangul"
+            : item.type === "listening" || item.type === "dictation"
+              ? "listening"
+              : item.type === "reading"
+                ? "reading"
+                : item.type === "sentence" || item.type === "typing"
+                  ? "sentence"
+                  : "grammar";
+      reviewGroups[key]++;
+    });
+  appState.mistakes.forEach((item) => {
+    const key =
+      item.type === "vocab"
+        ? "vocab"
+        : item.type === "hangul"
+          ? "hangul"
+          : item.type === "listening" || item.type === "dictation"
+            ? "listening"
+            : item.type === "reading"
+              ? "reading"
+              : item.type === "sentence" || item.type === "typing"
+                ? "sentence"
+                : "grammar";
+    reviewGroups[key]++;
+  });
   summary.innerHTML =
     '<div class="review-summary-card"><div class="review-summary-num">' +
     appState.progress.completedLessons.length +
@@ -10579,7 +11249,13 @@ function renderReview() {
     '</div><div class="review-summary-label">Sentences</div></div>' +
     '<div class="review-summary-card"><div class="review-summary-num">' +
     dueCount +
-    '</div><div class="review-summary-label">Due Today</div></div>';
+    '</div><div class="review-summary-label">Due Today</div></div>' +
+    '<div class="review-breakdown">Due now: ' +
+    Object.entries(reviewGroups)
+      .filter(([, count]) => count)
+      .map(([name, count]) => name + " " + count)
+      .join(" · ") +
+    "</div>";
 
   if (mistakesEl) {
     let mHTML = '<div class="review-mistakes-title">Mistakes to Revisit</div>';
@@ -10627,12 +11303,14 @@ function renderReview() {
         exp.sentences.length;
       sessionEl.innerHTML =
         totalExposed > 0
-          ? '<button class="review-session-start" id="reviewStartBtn">Start Review Session</button><div class="review-question-area" id="reviewQuestionArea"></div>'
+          ? '<button class="review-session-start" id="reviewStartBtn">Start Smart Review</button><div class="review-question-area" id="reviewQuestionArea"></div>'
           : '<div class="review-empty">Visit Hangul, Vocabulary, and Grammar to build up material for review.</div>';
       const startBtn = document.getElementById("reviewStartBtn");
       if (startBtn)
         startBtn.addEventListener("click", () => {
           reviewQIdx = 0;
+          reviewSeenKeys.clear();
+          startStudySession();
           renderReviewQuestion();
         });
     }
@@ -10640,6 +11318,7 @@ function renderReview() {
 }
 
 let reviewQIdx = 0;
+const reviewSeenKeys = new Set();
 
 function buildReviewPool() {
   const pool = [];
@@ -10691,7 +11370,11 @@ function buildReviewPool() {
     const extra = Math.min(3, missCounts[item.kr] || 0);
     for (let i = 0; i < 1 + extra; i++) weighted.push(item);
   });
-  return shuffleArray(weighted.length ? weighted : pool);
+  const shuffled = shuffleArray(weighted.length ? weighted : pool);
+  const unseen = shuffled.filter(
+    (item) => !reviewSeenKeys.has(item.type + ":" + item.kr),
+  );
+  return unseen.length ? unseen : shuffled;
 }
 
 function renderReviewQuestion() {
@@ -10704,6 +11387,8 @@ function renderReviewQuestion() {
     return;
   }
   const item = pool[reviewQIdx % pool.length];
+  reviewSeenKeys.add(item.type + ":" + item.kr);
+  const reviewMode = reviewQIdx % 3 === 1 ? "recall" : "recognition";
 
   const distractorPool =
     item.type === "vocab"
@@ -10727,46 +11412,102 @@ function renderReviewQuestion() {
   });
   card.innerHTML =
     '<div class="quiz-question-label">' +
-    (item.type === "vocab"
-      ? "What does this word mean?"
-      : "What sound does this represent?") +
+    (reviewMode === "recall"
+      ? "Recall first — type the answer before revealing it"
+      : item.type === "vocab"
+        ? "What does this word mean?"
+        : "What sound does this represent?") +
     "</div>" +
     '<div class="quiz-char" style="font-size:52px">' +
     item.kr +
     "</div>" +
-    '<div class="quiz-options">' +
-    optHTML +
-    "</div>" +
+    (reviewMode === "recall"
+      ? '<input class="review-recall-input" id="reviewRecallInput" placeholder="Type your answer" autocomplete="off"><button class="quiz-option" id="reviewRecallCheck">Check recall</button><button class="checkpoint-reveal" id="reviewRecallReveal">Reveal answer</button>'
+      : '<div class="quiz-options">' + optHTML + "</div>") +
     '<div class="quiz-feedback" id="reviewQFeedback"></div>' +
     '<button class="quiz-next" id="reviewQNext">Next</button>';
   area.innerHTML = "";
   area.appendChild(card);
 
-  card.querySelectorAll(".quiz-option").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      card.querySelectorAll(".quiz-option").forEach((b) => {
-        b.classList.add("disabled");
-        if (b.dataset.opt === item.correct) b.classList.add("correct");
-      });
+  if (reviewMode === "recall") {
+    let recallAnswered = false;
+    const checkRecall = (revealed) => {
+      if (recallAnswered) return;
+      const input = card.querySelector("#reviewRecallInput");
+      const answer = ((input && input.value) || "").trim().toLowerCase();
+      const correct =
+        !revealed && answer === String(item.correct).trim().toLowerCase();
+      recallAnswered = true;
       const fb = card.querySelector("#reviewQFeedback");
-      const next = card.querySelector("#reviewQNext");
-      if (this.dataset.opt === item.correct) {
-        this.classList.add("correct");
-        if (fb) {
-          fb.textContent = "Correct.";
-          fb.className = "quiz-feedback correct";
-        }
-      } else {
-        this.classList.add("incorrect");
-        if (fb) {
-          fb.textContent = "Incorrect. The answer is: " + item.correct;
-          fb.className = "quiz-feedback incorrect";
-        }
-        recordQuizMistake(item.type, item.kr, "Missed in Review");
+      if (fb) {
+        fb.textContent = revealed
+          ? "Answer: " +
+            item.correct +
+            ". This item is due for another recall attempt."
+          : correct
+            ? "Correct recall — you retrieved it without a prompt."
+            : "Almost. Correct answer: " +
+              item.correct +
+              ". Add it to your next review.";
+        fb.className = "quiz-feedback " + (correct ? "correct" : "hint");
       }
-      if (next) next.classList.add("visible");
+      recordQuality("review:" + item.type + ":" + item.kr, correct, {
+        revealed,
+        concept: item.type,
+      });
+      addLearningActivity(revealed ? 2 : correct ? 8 : 1, {
+        key: "review:" + item.type + ":" + item.kr,
+        type: item.type,
+        prompt: item.kr,
+        answer: item.correct,
+        correct,
+      });
+      if (!correct)
+        recordQuizMistake(item.type, item.kr, "Recall review: " + item.correct);
+      card.querySelector("#reviewQNext").classList.add("visible");
+    };
+    card
+      .querySelector("#reviewRecallCheck")
+      .addEventListener("click", () => checkRecall(false));
+    card
+      .querySelector("#reviewRecallReveal")
+      .addEventListener("click", () => checkRecall(true));
+  } else
+    card.querySelectorAll(".quiz-option").forEach((btn) => {
+      btn.addEventListener("click", function () {
+        card.querySelectorAll(".quiz-option").forEach((b) => {
+          b.classList.add("disabled");
+          if (b.dataset.opt === item.correct) b.classList.add("correct");
+        });
+        const fb = card.querySelector("#reviewQFeedback");
+        const next = card.querySelector("#reviewQNext");
+        if (this.dataset.opt === item.correct) {
+          this.classList.add("correct");
+          if (fb) {
+            fb.textContent = "Correct.";
+            fb.className = "quiz-feedback correct";
+          }
+          recordQuality("review:" + item.type + ":" + item.kr, true, {
+            concept: item.type,
+          });
+          addLearningActivity(8, {
+            key: "review:" + item.type + ":" + item.kr,
+            type: item.type,
+            prompt: item.kr,
+            answer: item.correct,
+            correct: true,
+          });
+        } else {
+          this.classList.add("incorrect");
+          if (fb) {
+            fb.textContent = "Incorrect. The answer is: " + item.correct;
+            fb.className = "quiz-feedback incorrect";
+          }
+          recordQuizMistake(item.type, item.kr, "Missed in Review");
+        }
+        if (next) next.classList.add("visible");
+      });
     });
-  });
   const nextBtn = card.querySelector("#reviewQNext");
   if (nextBtn)
     nextBtn.addEventListener("click", () => {
@@ -10890,6 +11631,14 @@ function renderListeningQuiz(area) {
           fb.textContent = "Correct. (" + item.kr + ")";
           fb.className = "quiz-feedback correct";
         }
+        recordQuality("listening:" + item.kr, true, { concept: "Listening" });
+        addLearningActivity(7, {
+          key: "listening:" + item.kr,
+          type: "listening",
+          prompt: item.kr,
+          answer: item.correct,
+          correct: true,
+        });
       } else {
         this.classList.add("incorrect");
         if (fb) {
@@ -10897,7 +11646,12 @@ function renderListeningQuiz(area) {
             "Incorrect. It was " + item.kr + " — " + item.correct;
           fb.className = "quiz-feedback incorrect";
         }
-        recordQuizMistake("listening", item.kr, "Missed in Listening practice");
+        recordQuality("listening:" + item.kr, false, { concept: "Listening" });
+        recordQuizMistake(
+          "listening",
+          item.kr,
+          "Missed in Listening practice — replay and listen for the final sound.",
+        );
       }
       if (next) next.classList.add("visible");
     });
