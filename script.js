@@ -38,6 +38,122 @@ const VOWELS = [
   { char: "ㅣ", rom: "i", name: "I", example: "이", exEn: "i" },
 ];
 
+const COMPOUND_VOWELS = [
+  { char: "ㅐ", rom: "ae", name: "Ae", example: "개", exEn: "dog" },
+  { char: "ㅔ", rom: "e", name: "E", example: "네", exEn: "yes" },
+  { char: "ㅘ", rom: "wa", name: "Wa", example: "과", exEn: "and / lesson" },
+  { char: "ㅙ", rom: "wae", name: "Wae", example: "왜", exEn: "why" },
+  {
+    char: "ㅚ",
+    rom: "oe",
+    name: "Oe",
+    example: "외국",
+    exEn: "foreign country",
+  },
+  { char: "ㅝ", rom: "wo", name: "Wo", example: "원", exEn: "won" },
+  { char: "ㅞ", rom: "we", name: "We", example: "웨이터", exEn: "waiter" },
+  { char: "ㅟ", rom: "wi", name: "Wi", example: "위", exEn: "on / above" },
+  { char: "ㅢ", rom: "ui", name: "Ui", example: "의자", exEn: "chair" },
+];
+const CONSONANT_DEPTH = {
+  ㄱ: [
+    "giyeok",
+    "g at the beginning; k at the end",
+    "가방, 고기, 한국",
+    "Do not make it as aspirated as ㅋ.",
+  ],
+  ㄴ: [
+    "nieun",
+    "n in all common positions",
+    "나무, 누나, 눈",
+    "Keep the tongue at the upper gum.",
+  ],
+  ㄷ: [
+    "digeut",
+    "d initially; t finally",
+    "다리, 어디, 믿다",
+    "Contrast plain ㄷ with aspirated ㅌ.",
+  ],
+  ㄹ: [
+    "rieul",
+    "r between vowels; l at the end",
+    "라면, 사람, 물",
+    "It is not a full English r or l in every position.",
+  ],
+  ㅁ: ["mieum", "m", "마음, 미국, 밤", "Close both lips for the nasal sound."],
+  ㅂ: [
+    "bieup",
+    "b initially; p finally",
+    "바다, 밥, 입",
+    "Contrast with tense ㅃ and aspirated ㅍ.",
+  ],
+  ㅅ: [
+    "siot",
+    "s; sh before ㅣ or y-vowels",
+    "사과, 시간, 옷",
+    "The final sound is a short t-like closure.",
+  ],
+  ㅇ: [
+    "ieung",
+    "silent initially; ng finally",
+    "아기, 영어, 공",
+    "It has no sound at the start of a block.",
+  ],
+  ㅈ: [
+    "jieut",
+    "j initially; t-like finally",
+    "자전거, 여자, 낮",
+    "Do not confuse it with strongly aspirated ㅊ.",
+  ],
+  ㅊ: [
+    "chieut",
+    "strongly aspirated ch",
+    "차, 친구, 꽃",
+    "A clear burst of air distinguishes it from ㅈ.",
+  ],
+  ㅋ: [
+    "kieuk",
+    "strongly aspirated k",
+    "커피, 코, 부엌",
+    "Use a noticeable puff of air.",
+  ],
+  ㅌ: [
+    "tieut",
+    "strongly aspirated t",
+    "토마토, 타다, 밑",
+    "Keep it separate from tense ㄸ.",
+  ],
+  ㅍ: [
+    "pieup",
+    "strongly aspirated p",
+    "파, 피자, 앞",
+    "A strong puff separates it from ㅂ.",
+  ],
+  ㅎ: [
+    "hieut",
+    "h",
+    "하나, 학교, 좋다",
+    "It can weaken or disappear in connected pronunciation.",
+  ],
+};
+CONSONANTS.forEach((item) => {
+  const depth = CONSONANT_DEPTH[item.char];
+  item.letterName = depth[0];
+  item.position = depth[1];
+  item.words = depth[2].split(", ");
+  item.note = depth[3];
+});
+VOWELS.concat(COMPOUND_VOWELS).forEach((item) => {
+  item.compare =
+    item.char === "ㅓ"
+      ? "Contrast ㅓ with rounded ㅗ."
+      : item.char === "ㅜ"
+        ? "Contrast ㅜ with unrounded ㅡ."
+        : item.char === "ㅐ" || item.char === "ㅔ"
+          ? "These are close in modern Seoul speech; learn them from spelling and context."
+          : "Listen for the mouth shape and compare it with nearby vowels.";
+});
+
 const SYLLABLE_EXAMPLES = [
   { eq: "ㄱ + ㅏ", result: "가" },
   { eq: "ㄴ + ㅏ", result: "나" },
@@ -63,6 +179,273 @@ const BATCHIM_EXAMPLES = [
   { syl: "물", rom: "mul" },
   { syl: "눈", rom: "nun" },
 ];
+
+const READING_ITEMS = [];
+function addReadingItems(stage, entries) {
+  entries.forEach(([kr, rom, en]) =>
+    READING_ITEMS.push({
+      id: "reading-" + (READING_ITEMS.length + 1),
+      stage,
+      kr,
+      rom,
+      en,
+      breakdown: kr.split("").join(" + "),
+      options: [en, "a different meaning", "not enough information"],
+      answer: en,
+    }),
+  );
+}
+addReadingItems("Stage 1 · Single syllables", [
+  ["가", "ga", "syllable ga"],
+  ["나", "na", "syllable na"],
+  ["다", "da", "syllable da"],
+  ["라", "ra", "syllable ra"],
+  ["마", "ma", "syllable ma"],
+  ["바", "ba", "syllable ba"],
+  ["사", "sa", "syllable sa"],
+  ["아", "a", "syllable a"],
+  ["자", "ja", "syllable ja"],
+  ["차", "cha", "syllable cha"],
+  ["카", "ka", "syllable ka"],
+  ["타", "ta", "syllable ta"],
+  ["파", "pa", "syllable pa"],
+  ["하", "ha", "syllable ha"],
+  ["거", "geo", "syllable geo"],
+  ["너", "neo", "syllable neo"],
+  ["고", "go", "syllable go"],
+  ["구", "gu", "syllable gu"],
+  ["기", "gi", "syllable gi"],
+  ["느", "neu", "syllable neu"],
+]);
+addReadingItems("Stage 2 · Two-syllable words", [
+  ["학교", "hak·gyo", "school"],
+  ["친구", "chin·gu", "friend"],
+  ["가족", "ga·jok", "family"],
+  ["어머니", "eo·meo·ni", "mother"],
+  ["아버지", "a·beo·ji", "father"],
+  ["도서관", "do·seo·gwan", "library"],
+  ["병원", "byeong·won", "hospital"],
+  ["식당", "sik·dang", "restaurant"],
+  ["커피", "keo·pi", "coffee"],
+  ["김치", "gim·chi", "kimchi"],
+  ["오늘", "o·neul", "today"],
+  ["내일", "nae·il", "tomorrow"],
+  ["공부", "gong·bu", "study"],
+  ["음악", "eum·ak", "music"],
+  ["여행", "yeo·haeng", "travel"],
+  ["날씨", "nal·ssi", "weather"],
+  ["시장", "si·jang", "market"],
+  ["버스", "beo·seu", "bus"],
+  ["교실", "gyo·sil", "classroom"],
+  ["한국어", "han·gu·geo", "Korean language"],
+]);
+addReadingItems("Stage 3 · Batchim and phrases", [
+  ["각", "gak", "each"],
+  ["간", "gan", "liver / between"],
+  ["감", "gam", "persimmon"],
+  ["밥", "bap", "rice / meal"],
+  ["책", "chaek", "book"],
+  ["물", "mul", "water"],
+  ["눈", "nun", "eye / snow"],
+  ["옷", "ot", "clothes"],
+  ["밖", "bak", "outside"],
+  ["한국", "han·guk", "Korea"],
+  ["학교에 가요.", "hak·gyo·e ga·yo", "I go to school."],
+  ["물을 마셔요.", "mu·reul ma·syeo·yo", "I drink water."],
+  ["책을 읽어요.", "chae·geul il·geo·yo", "I read a book."],
+  ["친구를 만나요.", "chin·gu·reul man·na·yo", "I meet a friend."],
+  ["집에 있어요.", "ji·be i·sseo·yo", "I am at home."],
+]);
+addReadingItems("Stage 4 · Beginner sentences", [
+  [
+    "오늘 저는 학교에 가요.",
+    "o·neul jeo·neun hak·gyo·e ga·yo",
+    "Today I go to school.",
+  ],
+  ["저는 밥을 먹어요.", "jeo·neun ba·beul meo·geo·yo", "I eat rice."],
+  [
+    "저는 한국어를 공부해요.",
+    "jeo·neun han·gu·geo·reul gong·bu·hae·yo",
+    "I study Korean.",
+  ],
+  [
+    "친구와 영화를 봐요.",
+    "chin·gu·wa yeong·hwa·reul bwa·yo",
+    "I watch a movie with a friend.",
+  ],
+  [
+    "도서관에서 책을 읽어요.",
+    "do·seo·gwan·e·seo chae·geul il·geo·yo",
+    "I read a book at the library.",
+  ],
+  [
+    "오늘 날씨가 좋아요.",
+    "o·neul nal·ssi·ga jo·a·yo",
+    "The weather is good today.",
+  ],
+  [
+    "아침에 커피를 마셔요.",
+    "a·chi·me keo·pi·reul ma·syeo·yo",
+    "I drink coffee in the morning.",
+  ],
+  [
+    "주말에 가족을 만나요.",
+    "ju·ma·re ga·jo·geul man·na·yo",
+    "I meet my family on the weekend.",
+  ],
+  [
+    "학교가 집에서 멀어요.",
+    "hak·gyo·ga ji·be·seo meo·reo·yo",
+    "The school is far from home.",
+  ],
+  [
+    "저는 매일 운동해요.",
+    "jeo·neun mae·il un·dong·hae·yo",
+    "I exercise every day.",
+  ],
+  [
+    "내일 친구와 여행할 거예요.",
+    "nae·il chin·gu·wa yeo·haeng·hal geo·ye·yo",
+    "I will travel with a friend tomorrow.",
+  ],
+  [
+    "시간이 없어서 못 가요.",
+    "si·ga·ni eop·seo·seo mot ga·yo",
+    "I cannot go because I have no time.",
+  ],
+  [
+    "비가 와요. 그래서 집에 있어요.",
+    "bi·ga wa·yo geu·rae·seo ji·be i·sseo·yo",
+    "It is raining, so I stay home.",
+  ],
+  ["이것은 제 책이에요.", "i·geo·seun je chae·gi·e·yo", "This is my book."],
+  [
+    "한국 음식이 맛있어요.",
+    "han·guk eum·si·gi ma·si·sseo·yo",
+    "Korean food is delicious.",
+  ],
+]);
+addReadingItems("Stage 5 · Dialogues and mini passages", [
+  [
+    "A: 안녕하세요? B: 네, 안녕하세요.",
+    "an·nyeong·ha·se·yo",
+    "A greeting exchange.",
+  ],
+  [
+    "A: 뭐 먹어요? B: 김치를 먹어요.",
+    "mwo meo·geo·yo",
+    "Asking and answering what someone eats.",
+  ],
+  [
+    "A: 어디에 가요? B: 학교에 가요.",
+    "eo·di·e ga·yo",
+    "Asking and answering a destination.",
+  ],
+  [
+    "A: 몇 시예요? B: 세 시예요.",
+    "myeot si·ye·yo",
+    "Asking and answering the time.",
+  ],
+  [
+    "A: 주말에 뭐 해요? B: 친구를 만나요.",
+    "ju·ma·re mwo hae·yo",
+    "Talking about a weekend plan.",
+  ],
+  [
+    "A: 한국어가 어때요? B: 재미있지만 어려워요.",
+    "han·gu·geo·ga eo·ttae·yo",
+    "Giving a mixed opinion about Korean.",
+  ],
+  [
+    "A: 물이 있어요? B: 네, 있어요.",
+    "mu·ri i·sseo·yo",
+    "Asking whether water exists.",
+  ],
+  [
+    "A: 도와주세요. B: 괜찮아요.",
+    "do·wa·ju·se·yo",
+    "A request for help and response.",
+  ],
+  ["A: 누구예요? B: 제 친구예요.", "nu·gu·ye·yo", "Identifying a person."],
+  [
+    "A: 왜 안 가요? B: 비가 와요.",
+    "wae an ga·yo",
+    "Explaining why someone is not going.",
+  ],
+]);
+
+function renderReadingCourse() {
+  const mount = document.getElementById("readingCourseMount");
+  if (!mount || mount.dataset.rendered) return;
+  mount.dataset.rendered = "1";
+  const groups = {};
+  READING_ITEMS.forEach((item) =>
+    (groups[item.stage] || (groups[item.stage] = [])).push(item),
+  );
+  mount.innerHTML =
+    '<div class="reading-course-heading"><h2 class="subsection-title">Progressive Reading Ladder</h2><p>Read the Korean first. Reveal support only after making your own attempt.</p></div>' +
+    Object.entries(groups)
+      .map(
+        ([stage, items]) =>
+          '<div class="reading-course-stage"><h3>' +
+          stage +
+          '</h3><div class="reading-course-grid">' +
+          items
+            .map(
+              (item) =>
+                '<article class="reading-item" data-reading-id="' +
+                item.id +
+                '"><div class="reading-item-kr">' +
+                item.kr +
+                ' <button class="listen-btn" data-speak="' +
+                item.kr.replace(/"/g, "&quot;") +
+                '" aria-label="Listen">▸</button></div><div class="reading-item-actions"><button class="reading-reveal" data-reveal="pron">Show pronunciation</button><button class="reading-reveal" data-reveal="translation">Show translation</button><button class="reading-reveal" data-reveal="breakdown">Break down</button></div><div class="reading-item-support" data-support="pron">' +
+                item.rom +
+                '</div><div class="reading-item-support" data-support="translation">' +
+                item.en +
+                '</div><div class="reading-item-support" data-support="breakdown">' +
+                item.breakdown +
+                '</div><label class="reading-check">What does it mean?<select data-reading-answer><option value="">Choose after reading</option>' +
+                item.options
+                  .map((option) => "<option>" + option + "</option>")
+                  .join("") +
+                '</select></label><div class="reading-feedback" data-reading-feedback></div></article>',
+            )
+            .join("") +
+          "</div></div>",
+      )
+      .join("");
+  mount.querySelectorAll(".reading-reveal").forEach((button) =>
+    button.addEventListener("click", () => {
+      const card = button.closest(".reading-item");
+      card
+        .querySelector('[data-support="' + button.dataset.reveal + '"]')
+        .classList.add("is-visible");
+      card.dataset.attempted = "1";
+    }),
+  );
+  mount.querySelectorAll("[data-reading-answer]").forEach((select) =>
+    select.addEventListener("change", () => {
+      const card = select.closest(".reading-item");
+      const item = READING_ITEMS.find(
+        (entry) => entry.id === card.dataset.readingId,
+      );
+      const feedback = card.querySelector("[data-reading-feedback]");
+      card.dataset.attempted = "1";
+      const correct = select.value === item.answer;
+      feedback.textContent = correct
+        ? "Correct. You read before revealing the answer."
+        : "Keep this item in Review: read the Korean again, then compare the word breakdown.";
+      feedback.className =
+        "reading-feedback " + (correct ? "is-correct" : "is-wrong");
+      if (typeof trackExposure === "function")
+        trackExposure("sentences", item.id);
+      if (!correct && typeof recordQuizMistake === "function")
+        recordQuizMistake("reading", item.kr, "Reading: " + item.en);
+    }),
+  );
+  bindListenButtons(mount);
+}
 
 /* Approximate syllable composition map for the constructor */
 const SYLLABLE_MAP = buildSyllableMap();
@@ -511,6 +894,281 @@ const VOCAB = {
   ],
 };
 
+const VOCAB_EXTRA = {
+  family: [
+    ["아버지", "a·beo·ji", "father"],
+    ["어머니", "eo·meo·ni", "mother"],
+    ["부모님", "bu·mo·nim", "parents"],
+    ["아들", "a·deul", "son"],
+    ["딸", "ttal", "daughter"],
+    ["형", "hyeong", "older brother (male speaker)"],
+    ["오빠", "op·pa", "older brother (female speaker)"],
+    ["누나", "nu·na", "older sister (male speaker)"],
+    ["언니", "eon·ni", "older sister (female speaker)"],
+    ["동생", "dong·saeng", "younger sibling"],
+    ["남편", "nam·pyeon", "husband"],
+    ["아내", "a·nae", "wife"],
+  ],
+  time: [
+    ["오늘", "o·neul", "today"],
+    ["어제", "eo·je", "yesterday"],
+    ["내일", "nae·il", "tomorrow"],
+    ["지금", "ji·geum", "now"],
+    ["아침", "a·chim", "morning"],
+    ["점심", "jeom·sim", "lunch / noon"],
+    ["저녁", "jeo·nyeok", "evening / dinner"],
+    ["밤", "bam", "night"],
+    ["시", "si", "o'clock"],
+    ["분", "bun", "minute"],
+    ["주", "ju", "week"],
+    ["년", "nyeon", "year"],
+  ],
+  days: [
+    ["월요일", "wo·ryo·il", "Monday"],
+    ["화요일", "hwa·yo·il", "Tuesday"],
+    ["수요일", "su·yo·il", "Wednesday"],
+    ["목요일", "mo·kyo·il", "Thursday"],
+    ["금요일", "geum·yo·il", "Friday"],
+    ["토요일", "to·yo·il", "Saturday"],
+    ["일요일", "i·ryo·il", "Sunday"],
+    ["주말", "ju·mal", "weekend"],
+    ["평일", "pyeong·il", "weekday"],
+    ["이번 주", "i·beon ju", "this week"],
+    ["다음 주", "da·eum ju", "next week"],
+    ["매일", "mae·il", "every day"],
+  ],
+  months: [
+    ["일월", "i·rwol", "January"],
+    ["이월", "i·wol", "February"],
+    ["삼월", "sam·wol", "March"],
+    ["사월", "sa·wol", "April"],
+    ["오월", "o·wol", "May"],
+    ["유월", "yu·wol", "June"],
+    ["칠월", "chi·rwol", "July"],
+    ["팔월", "pa·rwol", "August"],
+    ["구월", "gu·wol", "September"],
+    ["시월", "si·wol", "October"],
+    ["십일월", "si·bi·rwol", "November"],
+    ["십이월", "si·bi·wol", "December"],
+  ],
+  colors: [
+    ["빨간색", "ppal·gan·saek", "red"],
+    ["파란색", "pa·ran·saek", "blue"],
+    ["노란색", "no·ran·saek", "yellow"],
+    ["초록색", "cho·rok·saek", "green"],
+    ["검은색", "geo·meun·saek", "black"],
+    ["흰색", "huin·saek", "white"],
+    ["분홍색", "bun·hong·saek", "pink"],
+    ["보라색", "bo·ra·saek", "purple"],
+    ["주황색", "ju·hwang·saek", "orange"],
+    ["갈색", "gal·saek", "brown"],
+    ["회색", "hoe·saek", "gray"],
+    ["색깔", "saek·kkal", "color"],
+  ],
+  drinks: [
+    ["차", "cha", "tea"],
+    ["주스", "ju·seu", "juice"],
+    ["우유", "u·yu", "milk"],
+    ["맥주", "maek·ju", "beer"],
+    ["소주", "so·ju", "soju"],
+    ["콜라", "kol·la", "cola"],
+    ["물", "mul", "water"],
+    ["음료수", "eum·ryo·su", "beverage"],
+    ["와인", "wa·in", "wine"],
+    ["라떼", "ra·tte", "latte"],
+    ["아이스티", "a·i·seu·ti", "iced tea"],
+    ["컵", "keop", "cup"],
+  ],
+  home: [
+    ["방", "bang", "room"],
+    ["부엌", "bu·eok", "kitchen"],
+    ["화장실", "hwa·jang·sil", "bathroom"],
+    ["거실", "geo·sil", "living room"],
+    ["문", "mun", "door"],
+    ["창문", "chang·mun", "window"],
+    ["침대", "chim·dae", "bed"],
+    ["의자", "ui·ja", "chair"],
+    ["책상", "chaek·sang", "desk"],
+    ["냉장고", "naeng·jang·go", "refrigerator"],
+    ["열쇠", "yeol·ssoe", "key"],
+    ["주소", "ju·so", "address"],
+  ],
+  school: [
+    ["교실", "gyo·sil", "classroom"],
+    ["대학교", "dae·hak·gyo", "university"],
+    ["수업", "su·eop", "class"],
+    ["숙제", "suk·je", "homework"],
+    ["시험", "si·heom", "exam"],
+    ["질문", "jil·mun", "question"],
+    ["대답", "dae·dap", "answer"],
+    ["노트", "no·teu", "notebook"],
+    ["연필", "yeon·pil", "pencil"],
+    ["종이", "jong·i", "paper"],
+    ["학생증", "hak·saeng·jeung", "student ID"],
+    ["졸업", "jo·reop", "graduation"],
+  ],
+  work: [
+    ["회사", "hoe·sa", "company"],
+    ["직장", "jik·jang", "workplace"],
+    ["사장님", "sa·jang·nim", "boss / owner"],
+    ["동료", "dong·nyo", "colleague"],
+    ["회의", "hoe·ui", "meeting"],
+    ["일", "il", "work"],
+    ["월급", "wol·geup", "salary"],
+    ["휴가", "hyu·ga", "vacation"],
+    ["직업", "ji·geop", "job"],
+    ["아르바이트", "a·reu·ba·i·teu", "part-time job"],
+    ["출근", "chul·geun", "commuting to work"],
+    ["퇴근", "toe·geun", "leaving work"],
+  ],
+  transportation: [
+    ["버스", "beo·seu", "bus"],
+    ["택시", "taek·si", "taxi"],
+    ["기차", "gi·cha", "train"],
+    ["자동차", "ja·dong·cha", "car"],
+    ["자전거", "ja·jeon·geo", "bicycle"],
+    ["비행기", "bi·haeng·gi", "airplane"],
+    ["공항", "gong·hang", "airport"],
+    ["정류장", "jeong·nyu·jang", "bus stop"],
+    ["역", "yeok", "station"],
+    ["길", "gil", "road / way"],
+    ["표", "pyo", "ticket"],
+    ["타다", "ta·da", "to ride"],
+  ],
+  activities: [
+    ["일어나다", "i·reo·na·da", "to get up"],
+    ["씻다", "ssit·da", "to wash"],
+    ["자다", "ja·da", "to sleep"],
+    ["일하다", "il·ha·da", "to work"],
+    ["쉬다", "swi·da", "to rest"],
+    ["요리하다", "yo·ri·ha·da", "to cook"],
+    ["청소하다", "cheong·so·ha·da", "to clean"],
+    ["빨래하다", "ppal·lae·ha·da", "to do laundry"],
+    ["만나다", "man·na·da", "to meet"],
+    ["전화하다", "jeon·hwa·ha·da", "to call"],
+    ["기다리다", "gi·da·ri·da", "to wait"],
+    ["시작하다", "si·jak·ha·da", "to start"],
+  ],
+  hobbies: [
+    ["음악", "eum·ak", "music"],
+    ["영화", "yeong·hwa", "movie"],
+    ["드라마", "deu·ra·ma", "drama"],
+    ["노래", "no·rae", "song"],
+    ["사진", "sa·jin", "photo"],
+    ["여행", "yeo·haeng", "travel"],
+    ["게임", "ge·im", "game"],
+    ["독서", "dok·seo", "reading"],
+    ["축구", "chuk·gu", "soccer"],
+    ["농구", "nong·gu", "basketball"],
+    ["수영", "su·yeong", "swimming"],
+    ["그림", "geu·rim", "drawing / picture"],
+  ],
+  weather: [
+    ["날씨", "nal·ssi", "weather"],
+    ["맑다", "mak·da", "clear"],
+    ["흐리다", "heu·ri·da", "cloudy"],
+    ["비", "bi", "rain"],
+    ["눈", "nun", "snow"],
+    ["바람", "ba·ram", "wind"],
+    ["덥다", "deop·da", "hot"],
+    ["춥다", "chup·da", "cold"],
+    ["따뜻하다", "tta·tteut·ha·da", "warm"],
+    ["시원하다", "si·won·ha·da", "cool / refreshing"],
+    ["봄", "bom", "spring"],
+    ["여름", "yeo·reum", "summer"],
+  ],
+  shopping: [
+    ["가게", "ga·ge", "store"],
+    ["시장", "si·jang", "market"],
+    ["가격", "ga·gyeok", "price"],
+    ["돈", "don", "money"],
+    ["카드", "ka·deu", "card"],
+    ["현금", "hyeon·geum", "cash"],
+    ["싸다", "ssa·da", "cheap"],
+    ["비싸다", "bi·ssa·da", "expensive"],
+    ["사다", "sa·da", "to buy"],
+    ["팔다", "pal·da", "to sell"],
+    ["입다", "ip·da", "to wear"],
+    ["사이즈", "sa·i·jeu", "size"],
+  ],
+  adjectives: [
+    ["좋다", "jo·ta", "good"],
+    ["나쁘다", "na·ppeu·da", "bad"],
+    ["크다", "keu·da", "big"],
+    ["작다", "jak·da", "small"],
+    ["많다", "man·ta", "many"],
+    ["적다", "jeok·da", "few"],
+    ["쉽다", "swip·da", "easy"],
+    ["어렵다", "eo·ryeop·da", "difficult"],
+    ["빠르다", "ppa·reu·da", "fast"],
+    ["느리다", "neu·ri·da", "slow"],
+    ["예쁘다", "ye·ppeu·da", "pretty"],
+    ["재미있다", "jae·mi·it·da", "interesting / fun"],
+  ],
+  verbs: [
+    ["가다", "ga·da", "to go"],
+    ["오다", "o·da", "to come"],
+    ["먹다", "meok·da", "to eat"],
+    ["마시다", "ma·si·da", "to drink"],
+    ["보다", "bo·da", "to see / watch"],
+    ["읽다", "ik·da", "to read"],
+    ["쓰다", "sseu·da", "to write"],
+    ["듣다", "deut·da", "to listen"],
+    ["말하다", "mal·ha·da", "to speak"],
+    ["알다", "al·da", "to know"],
+    ["모르다", "mo·reu·da", "to not know"],
+    ["좋아하다", "jo·a·ha·da", "to like"],
+  ],
+  questions: [
+    ["누구", "nu·gu", "who"],
+    ["무엇", "mu·eot", "what"],
+    ["뭐", "mwo", "what (spoken)"],
+    ["어디", "eo·di", "where"],
+    ["언제", "eon·je", "when"],
+    ["왜", "wae", "why"],
+    ["어떻게", "eo·tteo·ke", "how"],
+    ["어느", "eo·neu", "which"],
+    ["몇", "myeot", "how many"],
+    ["얼마", "eol·ma", "how much"],
+    ["무슨", "mu·seun", "what kind of"],
+    ["어떤", "eo·tteon", "what sort of"],
+  ],
+  expressions: [
+    ["괜찮아요", "gwaen·chan·a·yo", "it is okay"],
+    ["알겠어요", "al·ge·sseo·yo", "I understand"],
+    ["몰라요", "mol·la·yo", "I do not know"],
+    ["잠깐만요", "jam·kkan·man·yo", "just a moment"],
+    ["다시 말해 주세요", "da·si mal·hae ju·se·yo", "please say it again"],
+    [
+      "천천히 말해 주세요",
+      "cheon·cheon·hi mal·hae ju·se·yo",
+      "please speak slowly",
+    ],
+    ["잘 모르겠어요", "jal mo·reu·ge·sseo·yo", "I am not sure"],
+    ["도와주세요", "do·wa·ju·se·yo", "please help"],
+    ["맛있어요", "ma·si·sseo·yo", "it is delicious"],
+    ["맛없어요", "ma·deop·sseo·yo", "it is not tasty"],
+    ["처음 뵙겠습니다", "cheo·eum boep·get·seum·ni·da", "nice to meet you"],
+    ["잘 부탁드립니다", "jal bu·tak·deu·rim·ni·da", "please take care of me"],
+  ],
+};
+Object.entries(VOCAB_EXTRA).forEach(([category, words]) => {
+  VOCAB[category] = words.map(([kr, rom, en]) => ({
+    kr,
+    rom,
+    en,
+    type: category === "verbs" || category === "activities" ? "Verb" : "Noun",
+    difficulty: category === "expressions" ? "Intermediate" : "Beginner",
+    ex_kr:
+      category === "verbs" || category === "activities"
+        ? "저는 " + kr + "."
+        : "저는 " + kr + "를 알아요.",
+    ex_en: "I know the word " + en + ".",
+    notes:
+      "Use this word in a short sentence and add it to Review if recall is difficult.",
+  }));
+});
+
 /* Grammar lessons */
 const GRAMMAR_LESSONS = [
   {
@@ -571,6 +1229,201 @@ const GRAMMAR_LESSONS = [
 ];
 
 /* Grammar comparison pairs — extends the existing Grammar section, does not add a new page */
+const GRAMMAR_EXTRA = [
+  [
+    "05",
+    "Subject Marker — 이/가",
+    "학생이 와요.",
+    "The student comes.",
+    "Use 이 after a consonant-final noun and 가 after a vowel-final noun to identify the subject or new information.",
+  ],
+  [
+    "06",
+    "Location — 에서",
+    "학교에서 공부해요.",
+    "I study at school.",
+    "에서 marks the place where an action happens; it is different from 에 for a destination or static location.",
+  ],
+  [
+    "07",
+    "Also — 도",
+    "저도 학생이에요.",
+    "I am also a student.",
+    "도 replaces a topic or subject marker when adding the meaning also or too.",
+  ],
+  [
+    "08",
+    "Possession — 의",
+    "제 친구의 책이에요.",
+    "It is my friend's book.",
+    "의 links a possessor to a noun. 제 is the common spoken form of 저의.",
+  ],
+  [
+    "09",
+    "And — 와/과",
+    "친구와 학교에 가요.",
+    "I go to school with a friend.",
+    "와 follows a vowel-final noun and 과 follows a consonant-final noun.",
+  ],
+  [
+    "10",
+    "And — 하고",
+    "밥하고 김치를 먹어요.",
+    "I eat rice and kimchi.",
+    "하고 is an easy spoken connector between nouns and does not change for final sound.",
+  ],
+  [
+    "11",
+    "Copula — 이에요/예요",
+    "학생이에요.",
+    "I am a student.",
+    "이에요 follows a consonant-final noun; 예요 follows a vowel-final noun.",
+  ],
+  [
+    "12",
+    "Negative Copula — 아니에요",
+    "학생이 아니에요.",
+    "I am not a student.",
+    "아니에요 negates identity and normally keeps 이 before a noun: 학생이 아니에요.",
+  ],
+  [
+    "13",
+    "Dictionary Forms",
+    "먹다",
+    "to eat",
+    "Dictionary forms usually end in 다. Remove 다 to find the stem before adding a polite ending.",
+  ],
+  [
+    "14",
+    "Present Polite — 아요/어요",
+    "가요.",
+    "I go.",
+    "Use 아요 after an ㅏ or ㅗ stem vowel and 어요 for most other stems; irregulars must be learned with examples.",
+  ],
+  [
+    "15",
+    "하다 Verbs",
+    "공부해요.",
+    "I study.",
+    "하다 becomes 해요 in polite present speech: 공부하다 → 공부해요.",
+  ],
+  [
+    "16",
+    "Past Tense — 았어요/었어요",
+    "먹었어요.",
+    "I ate.",
+    "Attach 았어요 after ㅏ/ㅗ and 었어요 elsewhere; the stem and ending contract in common forms.",
+  ],
+  [
+    "17",
+    "Future Plan — 을 거예요",
+    "내일 갈 거예요.",
+    "I will go tomorrow.",
+    "Use 을 거예요 after a consonant-final stem and ㄹ 거예요 after a vowel-final stem.",
+  ],
+  [
+    "18",
+    "Simple Negation — 안",
+    "안 먹어요.",
+    "I do not eat.",
+    "안 comes before a verb or adjective for a simple not. It is not used to express inability.",
+  ],
+  [
+    "19",
+    "Inability — 못",
+    "한국어를 못 읽어요.",
+    "I cannot read Korean.",
+    "못 expresses inability or an external obstacle, not a deliberate choice not to do something.",
+  ],
+  [
+    "20",
+    "Existence — 있다",
+    "집에 있어요.",
+    "I am at home.",
+    "있다 expresses existence or location. The place normally takes 에.",
+  ],
+  [
+    "21",
+    "Absence — 없다",
+    "시간이 없어요.",
+    "I do not have time.",
+    "없다 means not exist or not have. The thing that is absent often takes 이/가.",
+  ],
+  [
+    "22",
+    "Desire — 고 싶어요",
+    "한국에 가고 싶어요.",
+    "I want to go to Korea.",
+    "Attach 고 싶어요 to a verb stem to express the speaker's desire to do that action.",
+  ],
+  [
+    "23",
+    "Ability — 을 수 있다",
+    "읽을 수 있어요.",
+    "I can read.",
+    "을 수 있다 means can. Use ㄹ 수 after vowel-final stems and 을 수 after consonant-final stems.",
+  ],
+  [
+    "24",
+    "Inability — 을 수 없다",
+    "오늘 갈 수 없어요.",
+    "I cannot go today.",
+    "을 수 없다 means cannot because the action is impossible or unavailable.",
+  ],
+  [
+    "25",
+    "And Then — 그리고",
+    "밥을 먹어요. 그리고 공부해요.",
+    "I eat, and then I study.",
+    "그리고 connects complete ideas and is often placed at the beginning of the next sentence.",
+  ],
+  [
+    "26",
+    "But — 하지만",
+    "비싸요. 하지만 사고 싶어요.",
+    "It is expensive, but I want to buy it.",
+    "하지만 introduces a contrast. It can connect two independent sentences.",
+  ],
+  [
+    "27",
+    "So — 그래서",
+    "비가 와요. 그래서 집에 있어요.",
+    "It is raining, so I stay home.",
+    "그래서 introduces a result or conclusion based on the previous sentence.",
+  ],
+  [
+    "28",
+    "Verb Connector — 고",
+    "먹고 공부해요.",
+    "I eat and study.",
+    "고 joins verb or adjective stems in sequence without repeating the subject.",
+  ],
+  [
+    "29",
+    "Topic vs Subject",
+    "저는 한국어가 좋아요.",
+    "As for me, Korean is good / I like Korean.",
+    "은/는 frames the topic; 이/가 marks the thing being described or newly focused.",
+  ],
+  [
+    "30",
+    "Present Progressive — 고 있어요",
+    "지금 공부하고 있어요.",
+    "I am studying now.",
+    "고 있어요 emphasizes an action in progress, while 공부해요 can describe a habit or general action.",
+  ],
+];
+GRAMMAR_EXTRA.forEach(([num, title, sentence, translation, rule]) => {
+  GRAMMAR_LESSONS.push({
+    num,
+    title,
+    sentence,
+    morphemes: [{ kr: sentence, role: "Example", gloss: translation }],
+    translation: '"' + translation + '"',
+    rule: "<strong>Rule:</strong> " + rule,
+  });
+});
+
 const GRAMMAR_COMPARISONS = [
   {
     pair: "은/는 vs 이/가",
@@ -757,6 +1610,186 @@ const BUILDER_EXERCISES = [
   },
 ];
 
+function addBuilderSet(level, levelDesc, items) {
+  items.forEach(([prompt, answer, distractors]) => {
+    BUILDER_EXERCISES.push({
+      level,
+      levelDesc,
+      prompt,
+      blocks: answer.concat(distractors),
+      answer,
+    });
+  });
+}
+addBuilderSet(1, "Identity and Copula", [
+  ["I am a teacher.", ["저는", "선생님이에요"], ["학생이에요", "학교에"]],
+  ["I am a friend.", ["저는", "친구예요"], ["가요", "밥을"]],
+  ["She is a student.", ["그녀는", "학생이에요"], ["친구예요", "먹어요"]],
+  ["This is a book.", ["이것은", "책이에요"], ["물이에요", "가요"]],
+  ["That is water.", ["그것은", "물이에요"], ["책이에요", "먹어요"]],
+  ["I am Korean.", ["저는", "한국 사람이에요"], ["학생이에요", "학교에"]],
+  ["He is a doctor.", ["그는", "의사예요"], ["학생이에요", "읽어요"]],
+  ["This is my house.", ["여기는", "제 집이에요"], ["학교예요", "가요"]],
+  ["I am a beginner.", ["저는", "초보자예요"], ["선생님이에요", "먹어요"]],
+  ["My friend is a student.", ["제 친구는", "학생이에요"], ["학교에", "가요"]],
+]);
+addBuilderSet(2, "Object and Verb", [
+  ["I eat rice.", ["저는", "밥을", "먹어요"], ["마셔요", "학교에"]],
+  ["I drink water.", ["저는", "물을", "마셔요"], ["먹어요", "책을"]],
+  ["I read a book.", ["저는", "책을", "읽어요"], ["써요", "밥을"]],
+  ["I study Korean.", ["저는", "한국어를", "공부해요"], ["먹어요", "친구를"]],
+  ["I watch a movie.", ["저는", "영화를", "봐요"], ["읽어요", "물을"]],
+  ["I listen to music.", ["저는", "음악을", "들어요"], ["봐요", "책을"]],
+  ["I write a letter.", ["저는", "편지를", "써요"], ["읽어요", "마셔요"]],
+  ["I like kimchi.", ["저는", "김치를", "좋아해요"], ["먹어요", "학교를"]],
+  ["I meet a friend.", ["저는", "친구를", "만나요"], ["가요", "공부해요"]],
+  ["I learn Korean.", ["저는", "한국어를", "배워요"], ["읽어요", "와요"]],
+]);
+addBuilderSet(3, "Time Expressions", [
+  ["I eat rice today.", ["오늘", "저는", "밥을", "먹어요"], ["어제", "학교에"]],
+  ["I go tomorrow.", ["내일", "저는", "가요"], ["오늘", "먹어요"]],
+  ["I study every day.", ["매일", "저는", "공부해요"], ["어제", "학교에"]],
+  [
+    "I drink coffee in the morning.",
+    ["아침에", "커피를", "마셔요"],
+    ["저녁에", "먹어요"],
+  ],
+  ["I work on weekdays.", ["평일에", "일을", "해요"], ["주말에", "가요"]],
+  ["I rest on the weekend.", ["주말에", "쉬어요"], ["평일에", "일해요"]],
+  ["I read at night.", ["밤에", "책을", "읽어요"], ["아침에", "먹어요"]],
+  ["I meet a friend today.", ["오늘", "친구를", "만나요"], ["내일", "가요"]],
+  ["I go home now.", ["지금", "집에", "가요"], ["어제", "학교에서"]],
+]);
+addBuilderSet(4, "Location and Action", [
+  ["I study at school.", ["학교에서", "공부해요"], ["학교에", "가요"]],
+  [
+    "I eat at a restaurant.",
+    ["식당에서", "밥을", "먹어요"],
+    ["식당에", "가요"],
+  ],
+  ["I am at home.", ["집에", "있어요"], ["집에서", "가요"]],
+  ["I go to the library.", ["도서관에", "가요"], ["도서관에서", "공부해요"]],
+  ["I work at a company.", ["회사에서", "일해요"], ["회사에", "가요"]],
+  ["I meet at the cafe.", ["카페에서", "만나요"], ["카페에", "가요"]],
+  ["I sleep at home.", ["집에서", "자요"], ["집에", "있어요"]],
+  ["I study in the classroom.", ["교실에서", "공부해요"], ["교실에", "가요"]],
+  ["I live in Seoul.", ["서울에", "살아요"], ["서울에서", "가요"]],
+]);
+addBuilderSet(5, "Descriptions", [
+  ["The food is delicious.", ["음식이", "맛있어요"], ["맛없어요", "먹어요"]],
+  ["The weather is cold.", ["날씨가", "추워요"], ["더워요", "비가"]],
+  ["The book is interesting.", ["책이", "재미있어요"], ["어려워요", "읽어요"]],
+  ["The house is big.", ["집이", "커요"], ["작아요", "가요"]],
+  ["Korean is difficult.", ["한국어가", "어려워요"], ["쉬워요", "공부해요"]],
+  ["The coffee is hot.", ["커피가", "뜨거워요"], ["차가워요", "마셔요"]],
+  ["My friend is kind.", ["친구가", "친절해요"], ["비싸요", "만나요"]],
+  ["The room is clean.", ["방이", "깨끗해요"], ["더러워요", "있어요"]],
+  ["The movie is fun.", ["영화가", "재미있어요"], ["재미없어요", "봐요"]],
+]);
+addBuilderSet(6, "Questions", [
+  ["Where do you go?", ["어디에", "가요?"], ["언제", "먹어요?"]],
+  ["What do you eat?", ["뭐를", "먹어요?"], ["어디에", "가요?"]],
+  ["Who is this?", ["누구예요?"], ["뭐예요", "어디예요"]],
+  ["When do you study?", ["언제", "공부해요?"], ["어디에서", "먹어요?"]],
+  ["Why do you go?", ["왜", "가요?"], ["누구를", "만나요?"]],
+  ["How much is it?", ["얼마예요?"], ["몇 시예요?", "어디예요?"]],
+  ["What is your name?", ["이름이", "뭐예요?"], ["학교에", "가요?"]],
+  ["Which book do you read?", ["어느", "책을", "읽어요?"], ["무슨", "먹어요?"]],
+  ["How many people?", ["몇", "명이에요?"], ["얼마예요?", "가요?"]],
+]);
+addBuilderSet(7, "Past Tense", [
+  ["I ate rice yesterday.", ["어제", "밥을", "먹었어요"], ["먹어요", "내일"]],
+  ["I went to school.", ["학교에", "갔어요"], ["가요", "집에서"]],
+  ["I studied Korean.", ["한국어를", "공부했어요"], ["공부해요", "읽었어요"]],
+  ["I watched a movie.", ["영화를", "봤어요"], ["봐요", "먹었어요"]],
+  ["I drank coffee.", ["커피를", "마셨어요"], ["마셔요", "갔어요"]],
+  ["I met a friend.", ["친구를", "만났어요"], ["만나요", "공부했어요"]],
+  ["I read a book.", ["책을", "읽었어요"], ["읽어요", "썼어요"]],
+  ["I worked last week.", ["지난주에", "일했어요"], ["일해요", "쉬었어요"]],
+  ["I slept well.", ["잘", "잤어요"], ["자요", "일어났어요"]],
+]);
+addBuilderSet(8, "Future Plans", [
+  ["I will go tomorrow.", ["내일", "갈 거예요"], ["갔어요", "가요"]],
+  [
+    "I will study tonight.",
+    ["오늘 밤", "공부할 거예요"],
+    ["공부했어요", "먹을 거예요"],
+  ],
+  ["I will eat at home.", ["집에서", "먹을 거예요"], ["먹었어요", "갈 거예요"]],
+  ["I want to travel.", ["여행하고", "싶어요"], ["여행했어요", "가고 있어요"]],
+  ["I will meet my friend.", ["친구를", "만날 거예요"], ["만났어요", "만나요"]],
+  ["I will buy a book.", ["책을", "살 거예요"], ["샀어요", "사요"]],
+  ["I will learn Korean.", ["한국어를", "배울 거예요"], ["배웠어요", "배워요"]],
+  [
+    "I will call tomorrow.",
+    ["내일", "전화할 거예요"],
+    ["전화했어요", "전화해요"],
+  ],
+  [
+    "I will rest this weekend.",
+    ["이번 주말에", "쉴 거예요"],
+    ["쉬었어요", "쉬어요"],
+  ],
+]);
+addBuilderSet(9, "Negation", [
+  ["I do not eat meat.", ["고기를", "안 먹어요"], ["먹어요", "못 먹었어요"]],
+  ["I cannot go today.", ["오늘은", "못 가요"], ["안 가요", "갔어요"]],
+  ["I do not drink coffee.", ["커피를", "안 마셔요"], ["못 마셔요", "마셔요"]],
+  ["I cannot read Hangul.", ["한글을", "못 읽어요"], ["안 읽어요", "읽어요"]],
+  ["There is no time.", ["시간이", "없어요"], ["있어요", "안 가요"]],
+  ["I do not know.", ["잘", "몰라요"], ["알아요", "못 알아요"]],
+  ["I do not like rain.", ["비를", "안 좋아해요"], ["못 좋아해요", "좋아해요"]],
+  ["I cannot sleep.", ["잠을", "못 자요"], ["안 자요", "잤어요"]],
+  ["The food is not spicy.", ["음식이", "안 매워요"], ["못 매워요", "매워요"]],
+]);
+addBuilderSet(10, "Connected Sentences", [
+  [
+    "I eat and study.",
+    ["밥을", "먹고", "공부해요"],
+    ["먹어요", "그리고", "가요"],
+  ],
+  [
+    "It rains, so I stay home.",
+    ["비가", "와요. 그래서", "집에 있어요"],
+    ["맑아요", "하지만", "가요"],
+  ],
+  [
+    "It is expensive but I buy it.",
+    ["비싸요. 하지만", "사요"],
+    ["싸요", "그래서", "안 사요"],
+  ],
+  [
+    "I go and meet a friend.",
+    ["가서", "친구를", "만나요"],
+    ["가요", "먹고", "공부해요"],
+  ],
+  [
+    "I study because I want to pass.",
+    ["합격하고", "싶어서", "공부해요"],
+    ["공부했어요", "하지만", "가요"],
+  ],
+  [
+    "Today I go to school and study.",
+    ["오늘", "학교에 가고", "공부해요"],
+    ["어제", "먹어요", "집에"],
+  ],
+  [
+    "I am tired, so I rest.",
+    ["피곤해요. 그래서", "쉬어요"],
+    ["재미있어요", "하지만", "가요"],
+  ],
+  [
+    "I like Korean, but it is difficult.",
+    ["한국어가 좋아요. 하지만", "어려워요"],
+    ["쉬워요", "그래서", "공부해요"],
+  ],
+  [
+    "I drink water and go home.",
+    ["물을 마시고", "집에 가요"],
+    ["밥을 먹어요", "학교에", "있어요"],
+  ],
+]);
+
 /* Practice: Hangul Quiz */
 const HANGUL_QUIZ = [
   { char: "ㄱ", correct: "g/k", options: ["g/k", "n", "m", "s"] },
@@ -775,6 +1808,23 @@ const HANGUL_QUIZ = [
   { char: "ㅜ", correct: "u", options: ["o", "u", "eu", "a"] },
   { char: "ㅣ", correct: "i", options: ["eu", "i", "ya", "a"] },
 ];
+HANGUL_QUIZ.push(
+  { char: "ㄲ", correct: "kk", options: ["kk", "k", "g", "ng"] },
+  { char: "ㄸ", correct: "tt", options: ["d", "t", "tt", "th"] },
+  { char: "ㅃ", correct: "pp", options: ["b", "p", "pp", "m"] },
+  { char: "ㅆ", correct: "ss", options: ["s", "ss", "j", "ch"] },
+  { char: "ㅉ", correct: "jj", options: ["j", "jj", "ch", "ss"] },
+  { char: "ㅑ", correct: "ya", options: ["ya", "yeo", "a", "yo"] },
+  { char: "ㅕ", correct: "yeo", options: ["ya", "yeo", "eo", "u"] },
+  { char: "ㅛ", correct: "yo", options: ["yo", "yu", "o", "ya"] },
+  { char: "ㅠ", correct: "yu", options: ["yu", "yo", "u", "yeo"] },
+  { char: "ㅡ", correct: "eu", options: ["i", "eu", "eo", "u"] },
+  { char: "ㅐ", correct: "ae", options: ["e", "ae", "a", "eo"] },
+  { char: "ㅔ", correct: "e", options: ["ae", "e", "i", "eu"] },
+  { char: "ㅘ", correct: "wa", options: ["we", "wa", "wo", "oe"] },
+  { char: "ㅚ", correct: "oe", options: ["wae", "oe", "wi", "ui"] },
+  { char: "ㅢ", correct: "ui", options: ["ui", "we", "i", "eu"] },
+);
 
 /* Practice: Vocab Quiz */
 const VOCAB_QUIZ = [
@@ -998,6 +2048,15 @@ function showConsonantDetail(c) {
     c.exEn +
     "</span>" +
     "</div>" +
+    '<div class="detail-note"><strong>Position:</strong> ' +
+    c.position +
+    "</div>" +
+    '<div class="detail-note"><strong>Example words:</strong> ' +
+    c.words.join(" · ") +
+    "</div>" +
+    '<div class="detail-note"><strong>Watch for:</strong> ' +
+    c.note +
+    "</div>" +
     "</div>" +
     "</div>";
   if (typeof trackExposure === "function") trackExposure("hangul", c.char);
@@ -1006,7 +2065,7 @@ function showConsonantDetail(c) {
 function renderVowelGrid() {
   const grid = document.getElementById("vowelGrid");
   if (!grid) return;
-  VOWELS.forEach((v) => {
+  VOWELS.concat(COMPOUND_VOWELS).forEach((v) => {
     const cell = document.createElement("div");
     cell.className = "hangul-cell";
     cell.innerHTML =
@@ -1049,6 +2108,9 @@ function showVowelDetail(v) {
     '<span class="detail-ex-en">' +
     v.exEn +
     "</span>" +
+    "</div>" +
+    '<div class="detail-note"><strong>Comparison:</strong> ' +
+    v.compare +
     "</div>" +
     "</div>" +
     "</div>";
@@ -4358,7 +5420,151 @@ function renderWordOrder(area) {
    ============================================================ */
 
 const STORAGE_KEY = "koreanLearning";
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
+
+const COURSE_LEVELS = [
+  {
+    id: 0,
+    title: "Getting Started",
+    section: "lessons",
+    lessons: ["Course orientation", "Study habits", "Your first Korean sounds"],
+  },
+  {
+    id: 1,
+    title: "Hangul Foundations",
+    section: "hangul",
+    lessons: [
+      "Writing system introduction",
+      "Basic consonants I",
+      "Basic consonants II",
+      "Basic vowels I",
+      "Basic vowels II",
+      "Double consonants",
+      "Compound vowels",
+      "Building syllables",
+      "Vertical and horizontal vowels",
+      "Batchim basics",
+      "Batchim sound rules",
+      "Hangul mastery challenge",
+    ],
+  },
+  {
+    id: 2,
+    title: "Reading Korean",
+    section: "reading",
+    lessons: [
+      "Single syllables",
+      "Mixed syllables",
+      "Batchim reading",
+      "Simple words",
+      "Longer words",
+      "Short phrases",
+      "Beginner sentences",
+      "Mini dialogues",
+      "Reading passages",
+    ],
+  },
+  {
+    id: 3,
+    title: "Essential Vocabulary",
+    section: "vocabulary",
+    lessons: [
+      "Greetings",
+      "People and family",
+      "Numbers and age",
+      "Time and dates",
+      "Food and drinks",
+      "Places and transport",
+      "School and work",
+      "Daily life",
+      "Hobbies and weather",
+      "Shopping and body",
+      "Adjectives and verbs",
+    ],
+  },
+  {
+    id: 4,
+    title: "Core Grammar",
+    section: "grammar",
+    lessons: [
+      "Sentence basics",
+      " 은/는 topic",
+      " 이/가 subject",
+      " 을/를 object",
+      "Location particles",
+      "Copula",
+      "Present tense",
+      "Negation",
+      "Past tense",
+      "Future and intention",
+      "Requests and ability",
+      "Connecting ideas",
+    ],
+  },
+  {
+    id: 5,
+    title: "Sentence Building",
+    section: "builder",
+    lessons: [
+      "Noun sentences",
+      "Object and verb",
+      "Time expressions",
+      "Location and action",
+      "Descriptions",
+      "Past sentences",
+      "Future sentences",
+      "Questions",
+      "Connected sentences",
+    ],
+  },
+  {
+    id: 6,
+    title: "Everyday Korean",
+    section: "practice",
+    lessons: [
+      "At a cafe",
+      "Getting around",
+      "Making plans",
+      "Shopping",
+      "At school or work",
+      "Talking about routines",
+      "Making polite requests",
+      "Everyday challenge",
+    ],
+  },
+  {
+    id: 7,
+    title: "Intermediate Foundations",
+    section: "review",
+    lessons: [
+      "Accuracy clinic",
+      "Reading for detail",
+      "Grammar contrasts",
+      "Vocabulary in context",
+      "Longer sentences",
+      "Mixed checkpoint",
+    ],
+  },
+];
+const COURSE_LESSONS = COURSE_LEVELS.flatMap((level) =>
+  level.lessons.map((title, index) => ({
+    id: "course-" + level.id + "-" + (index + 1),
+    lessonId:
+      COURSE_LEVELS.slice(0, level.id).reduce(
+        (total, prior) => total + prior.lessons.length,
+        0,
+      ) +
+      index +
+      1,
+    level: level.id,
+    levelTitle: level.title,
+    title,
+    section: level.section,
+  })),
+);
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 function defaultProgressState() {
   return {
@@ -4367,6 +5573,11 @@ function defaultProgressState() {
     builderTotal: 0,
     lessonSessions: {},
     lessonResults: {},
+    xp: 0,
+    dailyGoal: 10,
+    daily: { date: todayKey(), activities: 0 },
+    lessonMastery: {},
+    reviewQueue: [],
   };
 }
 
@@ -4407,6 +5618,27 @@ function mergeStateDefaults(state) {
     typeof merged.progress.lessonResults === "object"
       ? merged.progress.lessonResults
       : {};
+  merged.progress.xp = Number.isFinite(merged.progress.xp)
+    ? merged.progress.xp
+    : 0;
+  merged.progress.dailyGoal = Math.max(
+    1,
+    Number(merged.progress.dailyGoal) || 10,
+  );
+  merged.progress.daily = Object.assign(
+    { date: todayKey(), activities: 0 },
+    merged.progress.daily,
+  );
+  if (merged.progress.daily.date !== todayKey())
+    merged.progress.daily = { date: todayKey(), activities: 0 };
+  merged.progress.lessonMastery =
+    merged.progress.lessonMastery &&
+    typeof merged.progress.lessonMastery === "object"
+      ? merged.progress.lessonMastery
+      : {};
+  merged.progress.reviewQueue = Array.isArray(merged.progress.reviewQueue)
+    ? merged.progress.reviewQueue
+    : [];
   merged.exposure = Object.assign(
     {},
     defaults.exposure,
@@ -4448,6 +5680,175 @@ function saveState() {
   }
 }
 
+function addLearningActivity(xp, reviewItem) {
+  const daily = appState.progress.daily;
+  if (daily.date !== todayKey()) {
+    daily.date = todayKey();
+    daily.activities = 0;
+  }
+  daily.activities++;
+  appState.progress.xp += xp || 0;
+  if (reviewItem) {
+    const existing = appState.progress.reviewQueue.find(
+      (item) => item.key === reviewItem.key,
+    );
+    const interval = reviewItem.correct
+      ? Math.min(14, Math.max(1, ((existing && existing.interval) || 0) * 2))
+      : 0;
+    const due =
+      Date.now() + (reviewItem.correct ? interval * 86400000 : 30 * 60000);
+    if (existing)
+      Object.assign(existing, { due, interval, correct: reviewItem.correct });
+    else
+      appState.progress.reviewQueue.push({
+        key: reviewItem.key,
+        type: reviewItem.type,
+        prompt: reviewItem.prompt,
+        answer: reviewItem.answer,
+        due,
+        interval,
+        correct: reviewItem.correct,
+      });
+  }
+  saveState();
+}
+
+function courseLessonStatus(lesson) {
+  const completedGuided = appState.progress.completedLessons.length;
+  const courseIndex = COURSE_LESSONS.indexOf(lesson);
+  if (
+    !appState.progress.lessonMastery[lesson.id] &&
+    courseIndex < completedGuided
+  )
+    appState.progress.lessonMastery[lesson.id] = 1;
+  const prior = COURSE_LESSONS.findIndex((item) => item.id === lesson.id) - 1;
+  const unlocked =
+    lesson.level === 0 ||
+    (prior >= 0 &&
+      appState.progress.lessonMastery[COURSE_LESSONS[prior].id] >= 1);
+  const mastery = appState.progress.lessonMastery[lesson.id] || 0;
+  return { unlocked, done: mastery >= 1, mastery };
+}
+
+function renderCourseDashboard() {
+  const root = document.getElementById("courseDashboard");
+  if (!root) return;
+  const current =
+    COURSE_LESSONS.find((lesson) => !courseLessonStatus(lesson).done) ||
+    COURSE_LESSONS[COURSE_LESSONS.length - 1];
+  const completed = COURSE_LESSONS.filter(
+    (lesson) => courseLessonStatus(lesson).done,
+  ).length;
+  const due =
+    appState.progress.reviewQueue.filter((item) => item.due <= Date.now())
+      .length + appState.mistakes.length;
+  const daily = appState.progress.daily;
+  const level = COURSE_LEVELS[current.level];
+  const levelHtml = COURSE_LEVELS.map((item) => {
+    const lessons = COURSE_LESSONS.filter((lesson) => lesson.level === item.id);
+    const finished = lessons.filter(
+      (lesson) => courseLessonStatus(lesson).done,
+    ).length;
+    const unlocked = lessons.some(
+      (lesson) => courseLessonStatus(lesson).unlocked,
+    );
+    const lessonList = lessons
+      .map((lesson) => {
+        const status = courseLessonStatus(lesson);
+        return (
+          '<button class="course-lesson ' +
+          (status.unlocked ? "is-unlocked" : "is-locked") +
+          '" data-course-section="' +
+          item.section +
+          '" data-course-lesson="' +
+          lesson.lessonId +
+          '" ' +
+          (status.unlocked ? "" : "disabled") +
+          "><span>" +
+          (status.done
+            ? "&#10003;"
+            : status.unlocked
+              ? "&#9675;"
+              : "&#128274;") +
+          "</span>" +
+          lesson.title +
+          "</button>"
+        );
+      })
+      .join("");
+    return (
+      '<div class="course-level ' +
+      (unlocked ? "is-unlocked" : "is-locked") +
+      '"><div><span class="course-level-number">LEVEL ' +
+      item.id +
+      "</span><strong>" +
+      item.title +
+      "</strong></div><span>" +
+      finished +
+      "/" +
+      lessons.length +
+      (unlocked ? " &#10003;" : " &#128274;") +
+      '</span><div class="progress-track"><div class="progress-fill" style="width:' +
+      Math.round((finished / lessons.length) * 100) +
+      '%"></div></div><div class="course-lesson-list">' +
+      lessonList +
+      "</div></div>"
+    );
+  }).join("");
+  root.innerHTML =
+    '<div class="course-summary"><div><span class="course-eyebrow">YOUR KOREAN COURSE</span><h2>Keep the chain moving</h2><p>Level ' +
+    current.level +
+    " &middot; " +
+    level.title +
+    " &middot; Next: " +
+    current.title +
+    '</p><button class="primary-btn" id="courseContinueBtn">Continue lesson</button></div><div class="course-stat"><strong>' +
+    appState.progress.xp +
+    '</strong><span>XP earned</span></div><div class="course-stat"><strong>' +
+    appState.streak.count +
+    '</strong><span>day streak</span></div></div><div class="course-metrics"><div><span>Course progress</span><strong>' +
+    Math.round((completed / COURSE_LESSONS.length) * 100) +
+    "%</strong></div><div><span>Today's goal</span><strong>" +
+    Math.min(daily.activities, appState.progress.dailyGoal) +
+    "/" +
+    appState.progress.dailyGoal +
+    "</strong></div><div><span>Due for review</span><strong>" +
+    due +
+    '</strong></div></div><div class="course-map"><div class="course-map-heading"><h2 class="subsection-title">Progress map</h2><span>' +
+    completed +
+    "/" +
+    COURSE_LESSONS.length +
+    " lessons</span></div>" +
+    levelHtml +
+    '</div><div class="course-recommendations"><button data-course-goto="review"><strong>Quick review</strong><span>' +
+    due +
+    ' items waiting</span></button><button data-course-goto="practice"><strong>Daily challenge</strong><span>Earn bonus XP today</span></button><button data-course-goto="' +
+    level.section +
+    '"><strong>Weak areas</strong><span>' +
+    (appState.mistakes[0]
+      ? appState.mistakes[0].note
+      : "Build your first review set") +
+    "</span></button></div>";
+  const continueBtn = document.getElementById("courseContinueBtn");
+  if (continueBtn)
+    continueBtn.onclick = () => {
+      navigateTo("lessons");
+      if (typeof openLesson === "function") openLesson(current.lessonId);
+    };
+  root.querySelectorAll("[data-course-goto]").forEach((button) => {
+    button.onclick = () => navigateTo(button.dataset.courseGoto);
+  });
+  root
+    .querySelectorAll("[data-course-section]:not(:disabled)")
+    .forEach((button) => {
+      button.onclick = () => {
+        navigateTo(button.dataset.courseSection);
+        if (typeof openLesson === "function")
+          openLesson(Number(button.dataset.courseLesson));
+      };
+    });
+}
+
 function recordLessonStep(lessonId, step, correct) {
   const sessions = appState.progress.lessonSessions;
   const current = sessions[lessonId] || {
@@ -4460,13 +5861,28 @@ function recordLessonStep(lessonId, step, correct) {
   current.attempts++;
   if (correct) current.correct++;
   sessions[lessonId] = current;
+  addLearningActivity(correct ? 10 : 2, {
+    key: "lesson:" + lessonId + ":" + step,
+    type: "lesson",
+    prompt: lessonId + " checkpoint",
+    answer: correct ? "Correct" : "Review this checkpoint",
+    correct,
+  });
   saveState();
+  renderCourseDashboard();
 }
 
 function trackExposure(category, id) {
   if (!appState.exposure[category]) appState.exposure[category] = [];
   if (appState.exposure[category].indexOf(id) === -1) {
     appState.exposure[category].push(id);
+    addLearningActivity(3, {
+      key: "exposure:" + category + ":" + id,
+      type: category,
+      prompt: id,
+      answer: "Review this item",
+      correct: true,
+    });
     saveState();
     if (typeof renderSkillMastery === "function") renderSkillMastery();
     if (typeof renderOverviewProgress === "function") renderOverviewProgress();
@@ -4486,6 +5902,13 @@ function recordBuilderResult(ex, correct) {
     });
     appState.mistakes = appState.mistakes.slice(0, 20);
   }
+  addLearningActivity(correct ? 15 : 3, {
+    key: "builder:" + ex.answer.join(" "),
+    type: "sentence",
+    prompt: ex.answer.join(" "),
+    answer: correct ? "Correct" : "Try this sentence again",
+    correct,
+  });
   trackExposure("sentences", ex.answer.join(" "));
   saveState();
   if (typeof renderReview === "function") renderReview();
@@ -4494,9 +5917,32 @@ function recordBuilderResult(ex, correct) {
 }
 
 function recordQuizMistake(type, kr, note) {
-  appState.mistakes.unshift({ type: type, kr: kr, note: note, ts: Date.now() });
+  const existing = appState.mistakes.find(
+    (item) => item.type === type && item.kr === kr,
+  );
+  if (existing) {
+    existing.missed = (existing.missed || 1) + 1;
+    existing.note = note || existing.note;
+    existing.ts = Date.now();
+  } else {
+    appState.mistakes.unshift({
+      type: type,
+      kr: kr,
+      note: note,
+      ts: Date.now(),
+      missed: 1,
+    });
+  }
   appState.mistakes = appState.mistakes.slice(0, 20);
+  addLearningActivity(2, {
+    key: type + ":" + kr,
+    type: type,
+    prompt: kr,
+    answer: note,
+    correct: false,
+  });
   saveState();
+  renderCourseDashboard();
   if (typeof renderReview === "function") renderReview();
   if (typeof renderSkillMastery === "function") renderSkillMastery();
   if (typeof renderOverviewProgress === "function") renderOverviewProgress();
@@ -4575,6 +6021,7 @@ function applyRomanizationLevelHint() {
    ============================================================ */
 
 let koreanVoice = null;
+let speechFallbackVoice = null;
 
 function initSpeech() {
   if (!("speechSynthesis" in window)) return;
@@ -4583,6 +6030,11 @@ function initSpeech() {
     koreanVoice =
       voices.find((v) => v.lang === "ko-KR") ||
       voices.find((v) => v.lang && v.lang.indexOf("ko") === 0) ||
+      null;
+    speechFallbackVoice =
+      voices.find((v) => v.default) ||
+      voices.find((v) => v.lang === "en-US") ||
+      voices[0] ||
       null;
   }
   pickVoice();
@@ -4595,14 +6047,22 @@ function speak(text, rate) {
   if (!text) return;
   if (!("speechSynthesis" in window)) return;
   try {
+    const voices = window.speechSynthesis.getVoices();
+    if (!koreanVoice && voices.length) initSpeech();
     window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "ko-KR";
+    utter.lang = koreanVoice
+      ? "ko-KR"
+      : speechFallbackVoice
+        ? speechFallbackVoice.lang
+        : "en-US";
     utter.rate = rate || 1;
-    if (koreanVoice) utter.voice = koreanVoice;
+    if (koreanVoice || speechFallbackVoice)
+      utter.voice = koreanVoice || speechFallbackVoice;
     window.speechSynthesis.speak(utter);
   } catch (e) {
-    /* fail gracefully — speech unavailable */
+    /* Speech is optional; keep the learning activity usable without it. */
   }
 }
 
@@ -5857,6 +7317,302 @@ const LESSONS = [
     practiceAnswer: "정책 시행을 발표했다",
   },
 ];
+
+const PHASE2_LESSON_BLUEPRINTS = [
+  [
+    47,
+    "Hangul Foundation",
+    "Compound Vowels",
+    "Combine ㅗ and ㅏ to read ㅘ, then compare it with ㅙ and ㅚ.",
+    "오늘",
+    "today",
+    "Which vowel begins 오늘?",
+    ["ㅗ", "ㅜ", "ㅡ"],
+    "ㅗ",
+  ],
+  [
+    48,
+    "Hangul Foundation",
+    "Syllable Block Layout",
+    "A vertical vowel sits beside the initial; a horizontal vowel sits below it.",
+    "고",
+    "go",
+    "Where is ㅗ placed in 고?",
+    ["Below ㄱ", "Beside ㄱ", "It is silent"],
+    "Below ㄱ",
+  ],
+  [
+    49,
+    "Hangul Foundation",
+    "Single Batchim",
+    "The final consonant closes the syllable and changes its ending sound.",
+    "밥",
+    "rice / meal",
+    "What is the batchim in 밥?",
+    ["ㅂ", "ㅏ", "ㅁ"],
+    "ㅂ",
+  ],
+  [
+    50,
+    "Hangul Foundation",
+    "Final Sound Families",
+    "Several final letters share one representative closing sound, so read the ending rather than every spelling difference.",
+    "밖",
+    "outside",
+    "밖 ends with which sound family?",
+    ["ㄱ", "ㄴ", "ㅁ"],
+    "ㄱ",
+  ],
+  [
+    51,
+    "Hangul Foundation",
+    "Batchim Before Vowels",
+    "A final consonant can link forward when the next syllable begins with silent ㅇ.",
+    "한국어",
+    "Korean language",
+    "What happens to 국 in 한국어?",
+    ["It links to 어", "It disappears", "It becomes ㅁ"],
+    "It links to 어",
+  ],
+  [
+    52,
+    "Reading",
+    "Single Syllable Reading",
+    "Decode one block by identifying its initial, vowel, and optional final.",
+    "가",
+    "ga",
+    "How do you read 가?",
+    ["ga", "go", "gu"],
+    "ga",
+  ],
+  [
+    53,
+    "Reading",
+    "Mixed Syllable Reading",
+    "Switch vowels deliberately instead of relying on a familiar pattern.",
+    "거기",
+    "there",
+    "What does 거기 mean?",
+    ["there", "today", "food"],
+    "there",
+  ],
+  [
+    54,
+    "Reading",
+    "Batchim Word Reading",
+    "Read closed syllables in common words and notice their ending sound.",
+    "책",
+    "book",
+    "What is 책?",
+    ["book", "water", "school"],
+    "book",
+  ],
+  [
+    55,
+    "Reading",
+    "Two-Syllable Words",
+    "Read common two-block words as a sequence, not as isolated letters.",
+    "친구",
+    "friend",
+    "What does 친구 mean?",
+    ["friend", "teacher", "family"],
+    "friend",
+  ],
+  [
+    56,
+    "Reading",
+    "Longer Words",
+    "Use syllable boundaries to read three- and four-block vocabulary.",
+    "도서관",
+    "library",
+    "Where do you study books?",
+    ["도서관", "병원", "식당"],
+    "도서관",
+  ],
+  [
+    57,
+    "Reading",
+    "Simple Phrases",
+    "Read a phrase first, then use particles to identify the relationship between words.",
+    "학교에 가요",
+    "go to school",
+    "What is the destination?",
+    ["학교", "가요", "저"],
+    "학교",
+  ],
+  [
+    58,
+    "Reading",
+    "Beginner Sentences",
+    "Read the verb at the end and reconstruct the meaning of the sentence.",
+    "저는 밥을 먹어요.",
+    "I eat rice.",
+    "What is being eaten?",
+    ["밥", "학교", "물"],
+    "밥",
+  ],
+  [
+    59,
+    "Vocabulary",
+    "Greetings and Politeness",
+    "Choose a greeting appropriate for a formal first meeting.",
+    "안녕하세요",
+    "hello",
+    "Which expression is formal?",
+    ["안녕하세요", "안녕", "잘 자"],
+    "안녕하세요",
+  ],
+  [
+    60,
+    "Vocabulary",
+    "Family Words",
+    "Build a small family vocabulary set and use it in a possessive phrase.",
+    "어머니",
+    "mother",
+    "Which word means mother?",
+    ["어머니", "아버지", "친구"],
+    "어머니",
+  ],
+  [
+    61,
+    "Vocabulary",
+    "Numbers and Time",
+    "Distinguish native and Sino-Korean numbers in practical time expressions.",
+    "오늘 세 시",
+    "three o'clock today",
+    "What time is 세 시?",
+    ["three", "four", "seven"],
+    "three",
+  ],
+  [
+    62,
+    "Vocabulary",
+    "Food and Drinks",
+    "Use food words as objects with the correct action verb.",
+    "김치를 먹어요",
+    "eat kimchi",
+    "Which word is the food?",
+    ["김치", "먹어요", "저"],
+    "김치",
+  ],
+  [
+    63,
+    "Vocabulary",
+    "Places and Transport",
+    "Name destinations and the transport words used to reach them.",
+    "지하철",
+    "subway",
+    "What is 지하철?",
+    ["subway", "bus stop", "airplane"],
+    "subway",
+  ],
+  [
+    64,
+    "Grammar",
+    "Topic and Subject",
+    "은/는 sets the conversation topic; 이/가 identifies the subject or new focus.",
+    "저는 학생이에요.",
+    "As for me, I am a student.",
+    "Which marker sets the topic?",
+    ["는", "가", "를"],
+    "는",
+  ],
+  [
+    65,
+    "Grammar",
+    "Object Marker",
+    "Use 을 after a consonant-ending object and 를 after a vowel-ending object.",
+    "밥을 먹어요.",
+    "I eat rice.",
+    "Choose the object marker.",
+    ["을", "는", "에"],
+    "을",
+  ],
+  [
+    66,
+    "Grammar",
+    "Location Contrast",
+    "에 marks a destination or static location; 에서 marks the place where an action occurs.",
+    "도서관에서 공부해요.",
+    "I study at the library.",
+    "Which marker fits an action location?",
+    ["에서", "에", "을"],
+    "에서",
+  ],
+  [
+    67,
+    "Grammar",
+    "Present Tense",
+    "Attach 아요/어요 or use 해요 with 하다 verbs for polite present statements.",
+    "공부해요.",
+    "I study.",
+    "Which is the polite present of 공부하다?",
+    ["공부해요", "공부했어요", "공부할 거예요"],
+    "공부해요",
+  ],
+  [
+    68,
+    "Grammar",
+    "Negation",
+    "안 negates an action; 못 expresses inability or circumstances that prevent it.",
+    "오늘은 못 가요.",
+    "I cannot go today.",
+    "Which form shows inability?",
+    ["못 가요", "안 가요", "가요"],
+    "못 가요",
+  ],
+  [
+    69,
+    "Sentence Building",
+    "Questions",
+    "Use question words and rising intonation while keeping the verb at the end.",
+    "어디에 가요?",
+    "Where are you going?",
+    "What does 어디 ask about?",
+    ["place", "person", "reason"],
+    "place",
+  ],
+  [
+    70,
+    "Everyday Korean",
+    "Mixed Everyday Checkpoint",
+    "Combine reading, vocabulary, particles, and polite endings in a short daily exchange.",
+    "오늘 친구와 카페에 가요.",
+    "Today I go to a cafe with a friend.",
+    "Who goes to the cafe?",
+    ["친구와 나", "선생님", "가족"],
+    "친구와 나",
+  ],
+];
+PHASE2_LESSON_BLUEPRINTS.forEach(
+  ([
+    id,
+    category,
+    title,
+    intro,
+    kr,
+    en,
+    practicePrompt,
+    practiceOptions,
+    practiceAnswer,
+  ]) => {
+    LESSONS.push({
+      id,
+      category,
+      title,
+      desc: intro,
+      difficulty: id >= 64 ? "Intermediate" : "Beginner",
+      intro,
+      examples: [{ kr, rom: "", en }],
+      explanation:
+        intro +
+        " Study the example, explain each part aloud, then answer the checkpoint without revealing the translation first.",
+      practicePrompt,
+      practiceOptions,
+      practiceAnswer,
+    });
+  },
+);
 
 /* Rich lesson notes sit beside the compact curriculum records. The fallback
    keeps older or newly added lessons useful while important concepts receive
@@ -8630,6 +10386,7 @@ function initProgressReset() {
     renderReview();
     renderSkillMastery();
     renderOverviewProgress();
+    renderCourseDashboard();
   });
 }
 
@@ -8799,6 +10556,9 @@ function renderReview() {
   if (!summary) return;
 
   const exp = appState.exposure;
+  const dueCount = appState.progress.reviewQueue.filter(
+    (item) => item.due <= Date.now(),
+  ).length;
   summary.innerHTML =
     '<div class="review-summary-card"><div class="review-summary-num">' +
     appState.progress.completedLessons.length +
@@ -8816,7 +10576,10 @@ function renderReview() {
     '</div><div class="review-summary-label">Grammar Concepts</div></div>' +
     '<div class="review-summary-card"><div class="review-summary-num">' +
     exp.sentences.length +
-    '</div><div class="review-summary-label">Sentences</div></div>';
+    '</div><div class="review-summary-label">Sentences</div></div>' +
+    '<div class="review-summary-card"><div class="review-summary-num">' +
+    dueCount +
+    '</div><div class="review-summary-label">Due Today</div></div>';
 
   if (mistakesEl) {
     let mHTML = '<div class="review-mistakes-title">Mistakes to Revisit</div>';
@@ -8825,15 +10588,29 @@ function renderReview() {
         '<div class="review-empty">No recorded mistakes yet — they will appear here as you practice.</div>';
     } else {
       appState.mistakes.slice(0, 10).forEach((m) => {
+        const missedDate = new Date(m.ts || Date.now()).toLocaleDateString();
         mHTML +=
-          '<div class="review-mistake-item"><span class="review-mistake-kr">' +
+          '<div class="review-mistake-item"><span class="review-mistake-kr">Question: ' +
           m.kr +
-          '</span><span class="review-mistake-note">' +
+          '</span><span class="review-mistake-note">Explanation: ' +
           m.note +
-          "</span></div>";
+          '</span><span class="review-mistake-meta">' +
+          missedDate +
+          " · missed " +
+          (m.missed || 1) +
+          " time" +
+          ((m.missed || 1) === 1 ? "" : "s") +
+          '</span><button class="review-practice-btn" data-review-type="' +
+          m.type +
+          '">Practice this weak area</button></div>';
       });
     }
     mistakesEl.innerHTML = mHTML;
+    mistakesEl
+      .querySelectorAll(".review-practice-btn")
+      .forEach((button) =>
+        button.addEventListener("click", () => navigateTo("practice")),
+      );
   }
 
   if (sessionEl) {
@@ -8898,7 +10675,16 @@ function buildReviewPool() {
   // review system — this just reorders/reweights the existing pool.
   const missCounts = {};
   appState.mistakes.forEach((m) => {
-    missCounts[m.kr] = (missCounts[m.kr] || 0) + 1;
+    missCounts[m.kr] = m.missed || (missCounts[m.kr] || 0) + 1;
+  });
+  appState.mistakes.forEach((mistake) => {
+    if (["grammar", "sentence", "reading"].indexOf(mistake.type) !== -1)
+      pool.push({
+        type: mistake.type,
+        kr: mistake.kr,
+        correct: mistake.answer || "Review the explanation",
+        options: [mistake.answer || "Review the explanation"],
+      });
   });
   const weighted = [];
   pool.forEach((item) => {
@@ -9763,6 +11549,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initRomToggle();
   initSpeech();
   enhanceReadingAudio();
+  renderReadingCourse();
   renderLessonList();
   initTopikFilter();
   initLessonNav();
@@ -9772,6 +11559,7 @@ document.addEventListener("DOMContentLoaded", function () {
   updateSidebarLevel();
   renderSkillMastery();
   renderOverviewProgress();
+  renderCourseDashboard();
   initNotes();
 
   // Restore whichever section the user was last on, instead of always resetting to Overview.
