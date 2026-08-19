@@ -11357,7 +11357,11 @@ function buildReviewPool() {
     missCounts[m.kr] = m.missed || (missCounts[m.kr] || 0) + 1;
   });
   appState.mistakes.forEach((mistake) => {
-    if (["grammar", "sentence", "reading"].indexOf(mistake.type) !== -1)
+    if (
+      ["grammar", "lesson", "sentence", "reading", "typing"].indexOf(
+        mistake.type,
+      ) !== -1
+    )
       pool.push({
         type: mistake.type,
         kr: mistake.kr,
